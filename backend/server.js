@@ -2,46 +2,35 @@ const express = require('express');
 const cors = require('cors');
 const http = require('http');
 const socketio = require('socket.io');
+const path = require('path');
 const db = require('./config/db'); // Import your database configuration
 
 // Initialize Express app
 const app = express();
 const server = http.createServer(app);
 
-// Socket.io setup
-const io = socketio(server, {
-  cors: {
-    origin: "*",  // Allow all origins (adjust for production)
-    methods: ["GET", "POST"]
-  }
-});
-
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: "50mb" }));
 
-// Database connection
-db.connect((err) => {
-  if (err) {
-    console.error('Database connection failed:', err);
-    process.exit(1);
-  }
-  console.log('Connected to database');
-});
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Basic route
-app.get('/', (req, res) => {
-  res.send('Server is running with database connection');
-});
+
+//routes
+const authRoutes = require('./routes/auth');
+const tripRoutes = require('./routes/trip');
+const profileRoutes = require('./routes/profile');
+const friendsRoutes = require('./routes/friends');
+const dataRoutes = require('./routes/data');
+
+app.use('/api/auth', authRoutes);
+app.use('/api/trips', tripRoutes);
+app.use('/api/profile', profileRoutes);
+app.use('/api/friends', friendsRoutes);
+app.use('/api/data', dataRoutes);
 
 // Socket.io connection handler
-io.on('connection', (socket) => {
-  console.log('New client connected');
-  
-  socket.on('disconnect', () => {
-    console.log('Client disconnected');
-  });
-});
 
 // Start server
 const PORT = 3000;
