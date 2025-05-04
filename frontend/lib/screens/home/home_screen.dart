@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/screens/create_trip/creation_voyage_screen.dart';
 import 'package:frontend/screens/home/filter_screen.dart';
+import 'package:frontend/screens/profile/pofile_screen.dart';
 
 
 class OffersPage extends StatelessWidget {
@@ -49,11 +50,21 @@ class OffersPage extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
                 children: [
-                  const CircleAvatar(
-                    radius: 24,
-                    backgroundImage:
-                        AssetImage('assets/profile.jpg'), // à changer
-                  ),
+              GestureDetector(
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>  CustomProfileScreen(),
+      ),
+    );
+  },
+  child: const CircleAvatar(
+    radius: 24,
+    backgroundImage: AssetImage('assets/profile.jpg'), // à changer
+  ),
+),
+
                   const SizedBox(width: 12),
                   const Expanded(
                     child: Text.rich(

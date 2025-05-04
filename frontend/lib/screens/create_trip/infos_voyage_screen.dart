@@ -84,7 +84,7 @@ class _InfosVoyagePageState extends State<InfosVoyagePage> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            SizedBox(height: 20),
+            SizedBox(height: 30),
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
