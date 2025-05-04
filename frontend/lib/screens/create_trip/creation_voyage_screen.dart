@@ -41,8 +41,9 @@ class _CreationVoyagePageState extends State<CreationVoyagePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+                SizedBox(height: 30),
               Text('Activités', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              SizedBox(height: 8),
+              SizedBox(height: 16),
               Wrap(
                 spacing: 8.0,
                 runSpacing: 8.0,
@@ -80,7 +81,7 @@ class _CreationVoyagePageState extends State<CreationVoyagePage> {
                 ),
               SizedBox(height: 24),
               Text('Budget', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              SizedBox(height: 8),
+              SizedBox(height: 16),
               TextFormField(
                 controller: budgetController,
                 keyboardType: TextInputType.number,
@@ -104,7 +105,7 @@ class _CreationVoyagePageState extends State<CreationVoyagePage> {
               ),
               SizedBox(height: 24),
               Text('Départ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              SizedBox(height: 8),
+              SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 value: depart,
                 items: ['ville A', 'ville B']
@@ -117,7 +118,7 @@ class _CreationVoyagePageState extends State<CreationVoyagePage> {
               ),
               SizedBox(height: 24),
               Text('Destination', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              SizedBox(height: 8),
+              SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 value: destination,
                 items: ['ville A', 'ville B']
