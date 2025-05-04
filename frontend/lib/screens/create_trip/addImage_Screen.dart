@@ -3,14 +3,10 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:frontend/screens/create_trip/conformation_screen.dart';
-
 import 'package:image_picker/image_picker.dart';
 
-// Remplace ceci par ton vrai écran de destination
-
-
 class AddImageScreen extends StatefulWidget {
- final List<Map<String, dynamic>> formData;
+  final List<Map<String, dynamic>> formData;
 
   const AddImageScreen({Key? key, required this.formData}) : super(key: key);
 
@@ -73,6 +69,21 @@ class _AddImageScreenState extends State<AddImageScreen> {
     });
   }
 
+  void _onNextPressed() {
+    if (_images.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Veuillez ajouter au moins une image')),
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => Conformation(formData: widget.formData),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -101,6 +112,7 @@ class _AddImageScreenState extends State<AddImageScreen> {
               Expanded(
                 child: ListView(
                   children: [
+                    // Display selected images
                     ..._images.asMap().entries.map((entry) {
                       final idx = entry.key;
                       final img = entry.value;
@@ -135,6 +147,7 @@ class _AddImageScreenState extends State<AddImageScreen> {
                         ],
                       );
                     }),
+                    // Add-image button (up to 6)
                     if (_images.length < 6)
                       GestureDetector(
                         onTap: () => _pickImage(ImageSource.gallery),
@@ -163,7 +176,10 @@ class _AddImageScreenState extends State<AddImageScreen> {
                   ],
                 ),
               ),
+
               const SizedBox(height: 10),
+
+              // Next button with error handling
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -174,22 +190,14 @@ class _AddImageScreenState extends State<AddImageScreen> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  onPressed: () {
-                      print("FORMDATA FINAL : ${widget.formData}");
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            Conformation(formData: widget.formData),
-                      ),
-                    );
-                  },
+                  onPressed: _onNextPressed,
                   child: const Text(
                     'Suivant',
                     style: TextStyle(fontSize: 18, color: Colors.white),
                   ),
                 ),
-              )
+              ),
+
             ],
           ),
         ),
@@ -209,24 +217,25 @@ class DashedBorderPainter extends CustomPainter {
     const dashWidth = 10.0, dashSpace = 5.0;
     double x = 0, y = 0;
 
+    // Top border
     while (x < size.width) {
       canvas.drawLine(Offset(x, 0), Offset(x + dashWidth, 0), paint);
       x += dashWidth + dashSpace;
     }
-
+    // Right border
     while (y < size.height) {
       canvas.drawLine(
           Offset(size.width, y), Offset(size.width, y + dashWidth), paint);
       y += dashWidth + dashSpace;
     }
-
+    // Bottom border
     x = size.width;
     while (x > 0) {
       canvas.drawLine(
           Offset(x, size.height), Offset(x - dashWidth, size.height), paint);
       x -= dashWidth + dashSpace;
     }
-
+    // Left border
     y = size.height;
     while (y > 0) {
       canvas.drawLine(Offset(0, y), Offset(0, y - dashWidth), paint);

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/screens/create_trip/addImage_Screen.dart';
-import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
 class InfosVoyagePage extends StatefulWidget {
@@ -17,6 +16,11 @@ class _InfosVoyagePageState extends State<InfosVoyagePage> {
   DateTime? _dateDepart; 
   DateTime? _dateFin;
 
+  // Variables pour afficher les erreurs
+  String? descriptionError;
+  String? dateDepartError;
+  String? dateFinError;
+
   Future<void> _selectDate(BuildContext context, bool isStartDate) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -28,11 +32,42 @@ class _InfosVoyagePageState extends State<InfosVoyagePage> {
       setState(() {
         if (isStartDate) {
           _dateDepart = picked;
+          dateDepartError = null;  // Clear error on valid date selection
         } else {
           _dateFin = picked;
+          dateFinError = null;  // Clear error on valid date selection
         }
       });
     }
+  }
+
+  // Fonction pour valider les champs
+  void validateFields() {
+    setState(() {
+      descriptionError = descriptionController.text.isEmpty
+          ? 'La description ne peut pas être vide'
+          : null;
+      dateDepartError = _dateDepart == null
+          ? 'La date de départ est requise'
+          : null;
+      dateFinError = _dateFin == null
+          ? 'La date de fin est requise'
+          : null;
+
+      if (descriptionError == null && dateDepartError == null && dateFinError == null) {
+        // Si tout est valide, on passe à la page suivante
+        widget.formData['description'] = descriptionController.text;
+        widget.formData['date_depart'] = _dateDepart;
+        widget.formData['date_fin'] = _dateFin;
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AddImageScreen(formData: [widget.formData]),
+          ),
+        );
+      }
+    });
   }
 
   @override
@@ -66,6 +101,11 @@ class _InfosVoyagePageState extends State<InfosVoyagePage> {
                 border: OutlineInputBorder(),
               ),
             ),
+            if (descriptionError != null)
+              Text(
+                descriptionError!,
+                style: TextStyle(color: Colors.red, fontSize: 12),
+              ),
             SizedBox(height: 16),
             Align(
               alignment: Alignment.centerLeft,
@@ -88,6 +128,11 @@ class _InfosVoyagePageState extends State<InfosVoyagePage> {
                 border: OutlineInputBorder(),
               ),
             ),
+            if (dateDepartError != null)
+              Text(
+                dateDepartError!,
+                style: TextStyle(color: Colors.red, fontSize: 12),
+              ),
             SizedBox(height: 16),
             Align(
               alignment: Alignment.centerLeft,
@@ -110,41 +155,33 @@ class _InfosVoyagePageState extends State<InfosVoyagePage> {
                 border: OutlineInputBorder(),
               ),
             ),
-            SizedBox(height: 380),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF24A500),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              onPressed: () {
-  // Ajoute les nouvelles infos dans formData
-  widget.formData['description'] = descriptionController.text;
-  widget.formData['date_depart'] = _dateDepart;
-  widget.formData['date_fin'] = _dateFin;
-
-  //print("FORMDATA FINAL : ${widget.formData}");
-
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => AddImageScreen(formData: [widget.formData]),
-
-    ),
-  );
-},
-
-                child: const Text(
-                  'Suivant',
-                  style: TextStyle(fontSize: 18, color: Colors.white),
-                ),
+            if (dateFinError != null)
+              Text(
+                dateFinError!,
+                style: TextStyle(color: Colors.red, fontSize: 12),
+              ),
+            Expanded(child: Container()), // Remplir l'espace restant
+          ],
+        ),
+      ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: SizedBox(
+          width: double.infinity,
+          height: 50,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF24A500),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
               ),
             ),
-          ],
+            onPressed: validateFields,
+            child: const Text(
+              'Suivant',
+              style: TextStyle(fontSize: 18, color: Colors.white),
+            ),
+          ),
         ),
       ),
     );
