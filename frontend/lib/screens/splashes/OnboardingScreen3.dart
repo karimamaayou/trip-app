@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/screens/auth/login_screen.dart';
 
 
 class FinalOnboardingScreen extends StatelessWidget {

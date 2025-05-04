@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/screens/auth/login_screen.dart';
-import 'package:frontend/screens/home/profile/home_screen.dart';
+import 'package:frontend/screens/home/home_screen.dart';
 
 
 class Conformation extends StatelessWidget {
