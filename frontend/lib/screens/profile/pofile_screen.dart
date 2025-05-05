@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/screens/auth/login_screen.dart';
 import 'package:frontend/screens/profile/editerProfil_screen.dart';
 
 const Color primaryColor = Color(0xFF0054A5);
@@ -65,7 +66,7 @@ class _CustomProfileScreenState extends State<CustomProfileScreen> {
               ],
             ),
 
-            const SizedBox(height: 25),
+            const SizedBox(height: 40),
 
             // Options
             Padding(
@@ -85,19 +86,26 @@ class _CustomProfileScreenState extends State<CustomProfileScreen> {
                       );
                     },
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 18),
                   ProfileTile(
                     icon: Icons.lock_outline,
                     title: "Changer mot de passe",
                     textColor: const Color.fromARGB(255, 86, 86, 86),
                     onTap: () {},
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 18),
                   ProfileTile(
                     icon: Icons.logout,
                     title: "Logout",
                     textColor: const Color.fromARGB(255, 86, 86, 86),
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => (LoginScreen()),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
