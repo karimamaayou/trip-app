@@ -18,7 +18,7 @@ class PostsPage extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     backgroundImage: AssetImage(
-                        'assets/images/marakich.jpeg'), // change image path
+                        'assets/images/marakich.jpeg'), 
                     radius: 25,
                   ),
                   SizedBox(width: 10),
@@ -97,7 +97,7 @@ class PostCard extends StatelessWidget {
               ],
             ),
             SizedBox(height: 10),
-            // Image
+            // Imagesddsdsdsd
             ClipRRect(
               borderRadius: BorderRadius.circular(3),
               child: Image.asset(
