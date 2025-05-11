@@ -145,7 +145,7 @@ class OffersPage extends StatelessWidget {
                         );
                       },
                     ),
-                  ],
+                  ], 
                 ),
               ),
             ),
@@ -175,7 +175,7 @@ class OffersPage extends StatelessWidget {
                 itemCount: offres.length,
                 itemBuilder: (context, index) {
                   final offre = offres[index];
-                  return _buildOffreCard(context, offre);
+                  return  _buildOffreCard(context, offre);
 
                 },
               ),
