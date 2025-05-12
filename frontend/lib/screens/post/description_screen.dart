@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/screens/post/post_screen.dart';
 
 class SharePage extends StatelessWidget {
-  const SharePage({super.key});
+  const SharePage(List<Map<String, dynamic>> formData, {super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -73,7 +73,14 @@ class SharePage extends StatelessWidget {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => PostsPage(),
+                            ),
+                          );
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Color(0xFF24A500),
                           shape: RoundedRectangleBorder(
