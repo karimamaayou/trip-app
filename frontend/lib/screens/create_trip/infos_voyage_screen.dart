@@ -12,11 +12,13 @@ class InfosVoyagePage extends StatefulWidget {
 
 class _InfosVoyagePageState extends State<InfosVoyagePage> {
   File? _image;
+  final TextEditingController titleController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
   DateTime? _dateDepart; 
   DateTime? _dateFin;
 
   // Variables pour afficher les erreurs
+  String? titleError;
   String? descriptionError;
   String? dateDepartError;
   String? dateFinError;
@@ -44,6 +46,9 @@ class _InfosVoyagePageState extends State<InfosVoyagePage> {
   // Fonction pour valider les champs
   void validateFields() {
     setState(() {
+      titleError = titleController.text.isEmpty
+          ? 'Le titre ne peut pas être vide'
+          : null;
       descriptionError = descriptionController.text.isEmpty
           ? 'La description ne peut pas être vide'
           : null;
@@ -54,8 +59,9 @@ class _InfosVoyagePageState extends State<InfosVoyagePage> {
           ? 'La date de fin est requise'
           : null;
 
-      if (descriptionError == null && dateDepartError == null && dateFinError == null) {
+      if (titleError == null && descriptionError == null && dateDepartError == null && dateFinError == null) {
         // Si tout est valide, on passe à la page suivante
+        widget.formData['titre'] = titleController.text;
         widget.formData['description'] = descriptionController.text;
         widget.formData['date_depart'] = _dateDepart;
         widget.formData['date_fin'] = _dateFin;
@@ -85,6 +91,27 @@ class _InfosVoyagePageState extends State<InfosVoyagePage> {
         child: Column(
           children: [
             SizedBox(height: 30),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Titre',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              ),
+            ),
+            SizedBox(height: 16),
+            TextFormField(
+              controller: titleController,
+              decoration: InputDecoration(
+                hintText: 'Titre du voyage',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            if (titleError != null)
+              Text(
+                titleError!,
+                style: TextStyle(color: Colors.red, fontSize: 12),
+              ),
+            SizedBox(height: 24),
             Align(
               alignment: Alignment.centerLeft,
               child: Text(

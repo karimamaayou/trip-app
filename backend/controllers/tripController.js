@@ -1,4 +1,5 @@
 const Trip = require('../models/Trip');
+const db = require('../config/db');
 
 const tripController = {
     // Get all trips
@@ -117,6 +118,106 @@ const tripController = {
             res.json(participants);
         } catch (error) {
             console.error('Error getting voyage participants:', error);
+            res.status(500).json({ message: 'Internal server error' });
+        }
+    },
+
+    // Create a new trip with images
+    createTripWithImages: async (req, res) => {
+        try {
+            console.log('Request body:', req.body); // Debug log entire request body
+            
+            const {
+                titre,
+                description,
+                date_depart,
+                date_retour,
+                capacite_max,
+                id_ville_depart,
+                id_ville_destination,
+                userId,
+                activites // Changed from destructuring to get activities directly
+            } = req.body;
+
+            // Get activities from request body and ensure they are integers
+            let parsedActivities = [];
+            if (activites) {
+                parsedActivities = Array.isArray(activites) 
+                    ? activites.map(id => parseInt(id))
+                    : [parseInt(activites)].filter(id => !isNaN(id));
+            }
+            
+            console.log('Parsed activities:', parsedActivities); // Debug log parsed activities
+
+            // Start transaction
+            const connection = await db.getConnection();
+            await connection.beginTransaction();
+
+            try {
+                // Create the trip
+                const [result] = await connection.query(
+                    `INSERT INTO voyages (
+                        titre, description, date_depart, date_retour,
+                        capacite_max, id_ville_depart, id_ville_destination, budget
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [titre, description, date_depart, date_retour, capacite_max, id_ville_depart, id_ville_destination, req.body.budget]
+                );
+
+                const tripId = result.insertId;
+                console.log('Created trip with ID:', tripId); // Debug log trip ID
+
+                // Add activities
+                if (parsedActivities && parsedActivities.length > 0) {
+                    const activityValues = parsedActivities.map(activityId => [tripId, activityId]);
+                    console.log('Activity values to be inserted:', activityValues); // Debug log
+                    
+                    const [activityResult] = await connection.query(
+                        'INSERT INTO voyage_activities (id_voyage, id_activity) VALUES ?',
+                        [activityValues]
+                    );
+                    console.log('Activity insertion result:', activityResult); // Debug log
+                } else {
+                    console.log('No activities to insert'); // Debug log
+                }
+
+                // Add images
+                if (req.files && req.files.length > 0) {
+                    const imageValues = req.files.map(file => [
+                        file.path.replace(/\\/g, '/').replace(/^.*[\\\/]/, '/'), // Normalize path and keep only the relative path
+                        tripId,
+                        null // id_post is null for trip images
+                    ]);
+                    
+                    // Log the image values for debugging
+                    console.log('Image values to be inserted:', imageValues);
+                    
+                    await connection.query(
+                        'INSERT INTO images (chemin, id_voyage, id_post) VALUES ?',
+                        [imageValues]
+                    );
+                }
+
+                // Add creator as organizer
+                await connection.query(
+                    `INSERT INTO participations (
+                        id_voyage, id_voyageur, role, statut
+                    ) VALUES (?, ?, 'organisateur', 'accepte')`,
+                    [tripId, userId]
+                );
+
+                await connection.commit();
+                res.status(201).json({
+                    message: 'Trip created successfully',
+                    tripId
+                });
+            } catch (error) {
+                await connection.rollback();
+                throw error;
+            } finally {
+                connection.release();
+            }
+        } catch (error) {
+            console.error('Error creating trip:', error);
             res.status(500).json({ message: 'Internal server error' });
         }
     }

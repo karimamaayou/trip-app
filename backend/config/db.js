@@ -6,8 +6,12 @@ const pool = mysql.createPool({
     password: '',
     database: 'tripapp',
     waitForConnections: true,
-    connectionLimit: 10,
+    connectionLimit: 10,   // Tu peux ajuster selon besoin
     queueLimit: 0
 });
+
+pool.getConnection()
+    .then(() => console.log('✅ Connected to Database (Promise pool)!'))
+    .catch(err => console.error('❌ Database connection error:', err));
 
 module.exports = pool;

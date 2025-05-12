@@ -3,67 +3,73 @@ import 'package:frontend/screens/create_trip/creation_voyage_screen.dart';
 import 'package:frontend/screens/home/filter_screen.dart';
 import 'package:frontend/screens/home/trip_details.dart';
 import 'package:frontend/screens/profile/pofile_screen.dart';
+import 'package:frontend/screens/notification/notification_screen.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:frontend/models/user.dart';
+import 'package:frontend/services/api_service.dart';
 
-class OffersPage extends StatelessWidget {
-  final List<Map<String, String>> offres = [
-    {
-      'titre': 'Marrakech trip',
-      'ville': 'Marrakech',
-      'image': 'images/marakich.jpeg',
-    },
-    {
-      'titre': 'Santorini',
-      'ville': 'Tanger',
-      'image': 'images/marakich.jpeg',
-    },
-    {
-      'titre': 'Marrakech trip',
-      'ville': 'Marrakech',
-      'image': 'images/marakich.jpeg',
-    },
-    {
-      'titre': 'Santorini',
-      'ville': 'Tanger',
-      'image': 'images/marakich.jpeg',
-    },
-        {
-      'titre': 'Marrakech trip',
-      'ville': 'Marrakech',
-      'image': 'images/marakich.jpeg',
-    },
-    {
-      'titre': 'Santorini',
-      'ville': 'Tanger',
-      'image': 'images/marakich.jpeg',
-    },
-    {
-      'titre': 'Marrakech trip',
-      'ville': 'Marrakech',
-      'image': 'images/marakich.jpeg',
-    },
-    {
-      'titre': 'Santorini',
-      'ville': 'Tanger',
-      'image': 'images/marakich.jpeg',
-    },
-  ];
+class OffersPage extends StatefulWidget {
+  @override
+  _OffersPageState createState() => _OffersPageState();
+}
+
+class _OffersPageState extends State<OffersPage> {
+  List<Map<String, dynamic>> offres = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    // Debug print to verify user data
+    print('🏠 HomeScreen - User Status:');
+    print('Is User Logged In: ${User.isLoggedIn()}');
+    print('User ID: ${User.getUserId()}');
+    print('User ID: ${User.profilePicture}');
+    
+    _fetchTrips();
+  }
+
+  Future<void> _fetchTrips() async {
+    try {
+      final response = await http.get(Uri.parse('http://localhost:3000/api/trips/allTrips'));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        setState(() {
+          offres = data.map((trip) => {
+            'titre': trip['titre'].toString(),
+            'ville_depart': trip['ville_depart'].toString(),
+            'ville_arrivee': trip['ville_arrivee'].toString(),
+            'id': trip['id_voyage'].toString(),
+            'images': trip['images'] ?? [],
+          }).toList();
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error fetching trips: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-    floatingActionButton: FloatingActionButton(
-  backgroundColor: Color(0xFF51D32D),
-  onPressed: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => CreationVoyagePage()),
-    );
-  },
-  child: Icon(Icons.add, size: 28, color: Colors.white),
-  shape: CircleBorder(), // 🔁 Assure que le bouton reste bien circulaire
-),
-
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Color(0xFF51D32D),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => CreationVoyagePage()),
+          );
+        },
+        child: Icon(Icons.add, size: 28, color: Colors.white),
+        shape: CircleBorder(),
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -81,20 +87,22 @@ class OffersPage extends StatelessWidget {
                             builder: (context) => CustomProfileScreen()),
                       );
                     },
-                    child: const CircleAvatar(
-                      radius: 24,
-                      backgroundImage: AssetImage('assets/profile.jpg'),
+                    child: CircleAvatar(
+                      radius: 25,
+                      backgroundImage: User.profilePicture != null
+                          ? NetworkImage('http://localhost:3000${User.profilePicture}')
+                          : const AssetImage('assets/profile.jpg') as ImageProvider,
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Text.rich(
                       TextSpan(
                         text: 'Bonjour, ',
                         style: TextStyle(fontSize: 16),
                         children: [
                           TextSpan(
-                            text: 'Karim amaayou',
+                            text: '${User.prenom} ${User.nom}',
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ],
@@ -103,7 +111,14 @@ class OffersPage extends StatelessWidget {
                   ),
                   IconButton(
                     icon: const Icon(Icons.notifications_none),
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const NotificationScreen(),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -163,7 +178,9 @@ class OffersPage extends StatelessWidget {
             const SizedBox(height: 16),
             // Grid of cards
             Expanded(
-              child: GridView.builder(
+              child: isLoading
+                  ? Center(child: CircularProgressIndicator())
+                  : GridView.builder(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 22),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -175,8 +192,7 @@ class OffersPage extends StatelessWidget {
                 itemCount: offres.length,
                 itemBuilder: (context, index) {
                   final offre = offres[index];
-                  return  _buildOffreCard(context, offre);
-
+                        return _buildTripCard(offre);
                 },
               ),
             ),
@@ -185,21 +201,25 @@ class OffersPage extends StatelessWidget {
       ),
     );
   }
-Widget _buildOffreCard(BuildContext context, Map<String, String> offre) {
+
+  Widget _buildTripCard(Map<String, dynamic> trip) {
+    final images = trip['images'] as List<dynamic>;
+    String? imageUrl;
+    
+    if (images.isNotEmpty && images[0] is Map<String, dynamic>) {
+      imageUrl = images[0]['chemin']?.toString();
+    }
+    
   return GestureDetector(
     onTap: () {
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (context) => TripDetailsPage(),
-        ),
+          MaterialPageRoute(
+            builder: (context) => TripDetailsPage(tripId: int.parse(trip['id'])),
+          ),
       );
     },
-    child: SizedBox(
-      width: double.infinity,
-      height: 200,
       child: Container(
-        
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -211,61 +231,73 @@ Widget _buildOffreCard(BuildContext context, Map<String, String> offre) {
             ),
           ],
         ),
-        
-        child:
-         Column(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.all(5.0),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Image.asset(
-                  offre['image'] ?? '',
-                  width: double.infinity,
-                  height: 170,
-                  fit: BoxFit.cover,
+            Expanded(
+              flex: 7,
+              child: Padding(
+                padding: const EdgeInsets.all(5.0),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.network(
+                    imageUrl != null ? 'http://localhost:3000$imageUrl' : 'http://localhost:3000/assets/default_trip.jpg',
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors.grey[300],
+                        child: const Icon(Icons.error, size: 50),
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    offre['titre'] ?? '',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 18,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 1),
-                  Row(
-                    children: [
-                      Icon(Icons.location_on,
-                          size: 16, color: Colors.grey.shade400),
-                      const SizedBox(width: 4),
-                      Text(
-                        offre['ville'] ?? '',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey.shade500,
-                        ),
+            Expanded(
+              flex: 3,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      trip['titre'] ?? '',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 18,
+                        color: Colors.black87,
                       ),
-                    ],
-                  ),
-                ],
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 1),
+                    Row(
+                      children: [
+                        Icon(Icons.location_on,
+                            size: 16, color: Colors.grey.shade400),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            trip['ville_arrivee'] ?? '',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
-        ),
       ),
     ),
   );
 }
-
-
-
 }

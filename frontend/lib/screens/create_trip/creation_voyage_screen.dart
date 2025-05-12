@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/screens/create_trip/infos_voyage_screen.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:frontend/models/user.dart';
 
 class CreationVoyagePage extends StatefulWidget {
   @override
@@ -8,18 +11,114 @@ class CreationVoyagePage extends StatefulWidget {
 
 class _CreationVoyagePageState extends State<CreationVoyagePage> {
   final _formKey = GlobalKey<FormState>();
-  List<String> activities = [
-    'Nager', 'Montagne', 'Tour', 'Quad', 'Jouer',
-    'Nager', 'Montagne1', 'Tour1', 'Quad1', 'Jouer1'
-  ];
+  List<Map<String, dynamic>> activities = [];
   List<String> selectedActivities = [];
   final TextEditingController budgetController = TextEditingController();
+  final TextEditingController capacityController = TextEditingController();
   String? depart;
   String? destination;
+  List<Map<String, dynamic>> cities = [];
+  bool isLoading = true;
+  bool isLoadingActivities = true;
 
   String? activityError;
+  String? capacityError;
 
   Map<String, dynamic> formData = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCities();
+    _fetchActivities();
+  }
+
+  Future<void> _fetchActivities() async {
+    try {
+      print('Fetching activities...');
+      final response = await http.get(
+        Uri.parse('http://localhost:3000/api/data/activities'),
+      );
+
+      print('Response status code: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        print('Parsed activities data: $data');
+        
+        setState(() {
+          activities = data.map((activity) => {
+            'id': activity['id_activity'],
+            'name': activity['nom_activity'],
+          }).toList();
+          print('Mapped activities: $activities');
+          isLoadingActivities = false;
+        });
+      } else {
+        print('Error response: ${response.body}');
+        setState(() {
+          isLoadingActivities = false;
+        });
+      }
+    } catch (e) {
+      print('Error fetching activities: $e');
+      setState(() {
+        isLoadingActivities = false;
+      });
+    }
+  }
+
+  Future<void> _fetchCities() async {
+    try {
+      final response = await http.get(
+        Uri.parse('http://localhost:3000/api/data/villes'),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        setState(() {
+          cities = data.map((city) => {
+            'id': city['id_ville'],
+            'name': city['nom_ville'],
+          }).toList();
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error fetching cities: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _submitForm() async {
+    if (_formKey.currentState!.validate()) {
+      if (selectedActivities.isEmpty) {
+        setState(() {
+          activityError = 'Veuillez sélectionner au moins une activité';
+        });
+        return;
+      }
+
+      formData = {
+        'id_voyageur': int.parse(User.getUserId() ?? '0'),
+        'activites': selectedActivities,
+        'budget': budgetController.text,
+        'capacite': capacityController.text,
+        'ville_depart': depart,
+        'ville_arrivee': destination,
+      };
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => InfosVoyagePage(formData: formData),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,18 +138,28 @@ class _CreationVoyagePageState extends State<CreationVoyagePage> {
         child: Form(
           key: _formKey,
           child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
                 SizedBox(height: 30),
               Text('Activités', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               SizedBox(height: 16),
+                      if (isLoadingActivities)
+                        Center(child: CircularProgressIndicator())
+                      else if (activities.isEmpty)
+                        Center(child: Text('Aucune activité disponible'))
+                      else
               Wrap(
                 spacing: 8.0,
                 runSpacing: 8.0,
                 children: activities.map((activity) {
-                  bool selected = selectedActivities.contains(activity);
+                            print('Building chip for activity: ${activity['name']}');
+                            bool selected = selectedActivities.contains(activity['id'].toString());
                   return ChoiceChip(
-                    label: Text(activity, style: TextStyle(fontSize: 13)),
+                              label: Text(activity['name'], style: TextStyle(fontSize: 13)),
                     selected: selected,
                     selectedColor: Colors.blue,
                     labelStyle: TextStyle(
@@ -61,9 +170,9 @@ class _CreationVoyagePageState extends State<CreationVoyagePage> {
                     onSelected: (_) {
                       setState(() {
                         if (selected) {
-                          selectedActivities.remove(activity);
+                                    selectedActivities.remove(activity['id'].toString());
                         } else {
-                          selectedActivities.add(activity);
+                                    selectedActivities.add(activity['id'].toString());
                         }
                         activityError = null;
                       });
@@ -103,15 +212,46 @@ class _CreationVoyagePageState extends State<CreationVoyagePage> {
                   return null;
                 },
               ),
+                      SizedBox(height: 24),
+                      Text('Capacité', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      SizedBox(height: 16),
+                      TextFormField(
+                        controller: capacityController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          hintText: "Nombre de participants maximum",
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Veuillez entrer une capacité';
+                          }
+                          final parsed = int.tryParse(value.trim());
+                          if (parsed == null) {
+                            return 'Veuillez entrer un nombre valide';
+                          }
+                          if (parsed <= 0) {
+                            return 'La capacité doit être supérieure à 0';
+                          }
+                          if (parsed > 50) {
+                            return 'La capacité ne peut pas dépasser 50';
+                  }
+                  return null;
+                },
+              ),
               SizedBox(height: 24),
               Text('Départ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 value: depart,
-                items: ['ville A', 'ville B']
-                    .map((city) => DropdownMenuItem(value: city, child: Text(city)))
-                    .toList(),
-                onChanged: (value) => setState(() => depart = value),
+                        hint: Text('Sélectionner votre ville'),
+                        items: isLoading 
+                          ? [DropdownMenuItem(value: 'loading', child: Text('Chargement...'))]
+                          : cities.map((city) => DropdownMenuItem(
+                              value: city['id'].toString(),
+                              child: Text(city['name']),
+                            )).toList(),
+                        onChanged: isLoading ? null : (value) => setState(() => depart = value),
                 decoration: InputDecoration(border: OutlineInputBorder()),
                 validator: (value) =>
                     value == null ? 'Veuillez choisir une ville de départ' : null,
@@ -121,15 +261,23 @@ class _CreationVoyagePageState extends State<CreationVoyagePage> {
               SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 value: destination,
-                items: ['ville A', 'ville B']
-                    .map((city) => DropdownMenuItem(value: city, child: Text(city)))
-                    .toList(),
-                onChanged: (value) => setState(() => destination = value),
+                        hint: Text('Sélectionner votre ville'),
+                        items: isLoading 
+                          ? [DropdownMenuItem(value: 'loading', child: Text('Chargement...'))]
+                          : cities.map((city) => DropdownMenuItem(
+                              value: city['id'].toString(),
+                              child: Text(city['name']),
+                            )).toList(),
+                        onChanged: isLoading ? null : (value) => setState(() => destination = value),
                 decoration: InputDecoration(border: OutlineInputBorder()),
                 validator: (value) =>
                     value == null ? 'Veuillez choisir une destination' : null,
               ),
-              Spacer(),
+                      SizedBox(height: 24), // Add padding at the bottom of the scrollable area
+                    ],
+                  ),
+                ),
+              ),
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -140,32 +288,7 @@ class _CreationVoyagePageState extends State<CreationVoyagePage> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  onPressed: () {
-                    bool isValid = _formKey.currentState!.validate();
-
-                    if (selectedActivities.isEmpty) {
-                      setState(() {
-                        activityError = "Veuillez sélectionner au moins une activité";
-                      });
-                      isValid = false;
-                    }
-
-                    if (isValid) {
-                      formData = {
-                        'activites': selectedActivities,
-                        'budget': budgetController.text.trim(),
-                        'depart': depart,
-                        'destination': destination,
-                      };
-
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => InfosVoyagePage(formData: formData),
-                        ),
-                      );
-                    }
-                  },
+                  onPressed: _submitForm,
                   child: const Text(
                     'Suivant',
                     style: TextStyle(fontSize: 18, color: Colors.white),

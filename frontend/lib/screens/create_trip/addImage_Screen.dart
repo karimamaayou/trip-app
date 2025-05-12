@@ -3,7 +3,11 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:frontend/screens/create_trip/conformation_screen.dart';
+import 'package:frontend/models/user.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+import 'dart:convert';
 
 class AddImageScreen extends StatefulWidget {
   final List<Map<String, dynamic>> formData;
@@ -16,6 +20,7 @@ class AddImageScreen extends StatefulWidget {
 
 class _AddImageScreenState extends State<AddImageScreen> {
   final List<dynamic> _images = [];
+  bool _isLoading = false;
 
   String getMediaType(String filePath) {
     final extension = filePath.split('.').last.toLowerCase();
@@ -69,18 +74,102 @@ class _AddImageScreenState extends State<AddImageScreen> {
     });
   }
 
-  void _onNextPressed() {
+  Future<void> _createTrip() async {
     if (_images.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Veuillez ajouter au moins une image')),
       );
-    } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => Conformation(formData: widget.formData),
-        ),
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Create multipart request
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('http://localhost:3000/api/trips/create'),
       );
+
+      // Add trip data
+      final tripData = widget.formData[0];
+      
+      // Debug print to check form data
+      print('Form data: $tripData');
+      
+      request.fields.addAll({
+        'titre': tripData['titre'],
+        'description': tripData['description'],
+        'date_depart': tripData['date_depart'].toString(),
+        'date_retour': tripData['date_fin'].toString(),
+        'capacite_max': tripData['capacite'].toString(),
+        'id_ville_depart': tripData['ville_depart'].toString(),
+        'id_ville_destination': tripData['ville_arrivee'].toString(),
+        'budget': tripData['budget'].toString(),
+        'userId': User.getUserId() ?? '1',
+      });
+
+      // Add activities
+      if (tripData['activites'] != null) {
+        final activities = tripData['activites'] as List;
+        if (activities.isNotEmpty) {
+          request.fields['activites'] = activities.join(',');
+        }
+      }
+
+      // Debug print request fields
+      print('Request fields: ${request.fields}');
+
+      // Add images
+      for (var i = 1; i < widget.formData.length; i++) {
+        final imageData = widget.formData[i];
+        if (kIsWeb) {
+          request.files.add(
+            http.MultipartFile.fromBytes(
+              'images',
+              imageData['image'] as Uint8List,
+              filename: imageData['name'],
+              contentType: MediaType.parse(imageData['type']),
+            ),
+          );
+        } else {
+          request.files.add(
+            await http.MultipartFile.fromPath(
+              'images',
+              (imageData['image'] as File).path,
+              contentType: MediaType.parse(imageData['type']),
+            ),
+          );
+        }
+      }
+
+      // Send request
+      final response = await request.send();
+      final responseData = await response.stream.bytesToString();
+      print('Response status: ${response.statusCode}');
+      print('Response data: $responseData');
+
+      if (response.statusCode == 201) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => Conformation(formData: widget.formData),
+          ),
+        );
+      } else {
+        throw Exception('Failed to create trip: $responseData');
+      }
+    } catch (e) {
+      print('Error creating trip: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error creating trip: $e')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -179,7 +268,7 @@ class _AddImageScreenState extends State<AddImageScreen> {
 
               const SizedBox(height: 10),
 
-              // Next button with error handling
+              // Next button with loading state
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -190,14 +279,15 @@ class _AddImageScreenState extends State<AddImageScreen> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  onPressed: _onNextPressed,
-                  child: const Text(
-                    'Suivant',
-                    style: TextStyle(fontSize: 18, color: Colors.white),
-                  ),
+                  onPressed: _isLoading ? null : _createTrip,
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                          'Suivant',
+                          style: TextStyle(fontSize: 18, color: Colors.white),
+                        ),
                 ),
               ),
-
             ],
           ),
         ),

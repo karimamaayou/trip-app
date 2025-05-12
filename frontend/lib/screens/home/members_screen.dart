@@ -1,63 +1,56 @@
 import 'package:flutter/material.dart';
 
 class MembersPage extends StatelessWidget {
-  final List<Map<String, String>> members;
+  final List<Map<String, dynamic>> members;
 
-  const MembersPage({super.key, required this.members});
+  const MembersPage({
+    Key? key,
+    required this.members,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: Colors.white,
-
       appBar: AppBar(
-        backgroundColor: Colors.white,
         title: const Text('Membres'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
       ),
-      
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: members.length,
         itemBuilder: (context, index) {
           final member = members[index];
-          return _memberCard(
-            member['name'] ?? 'Nom inconnu',
-            member['role'] ?? 'Rôle inconnu',
-            member['image'] ?? 'assets/user.jpg', // image par défaut si absente
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 4)],
+            ),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundImage: NetworkImage(member['image']),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      member['name'],
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      member['role'],
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                  ],
+                )
+              ],
+            ),
           );
         },
-      ),
-    );
-  }
-
-  Widget _memberCard(String name, String role, String imagePath) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 4)],
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 24,
-            backgroundImage: AssetImage(imagePath),
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-              Text(role, style: const TextStyle(color: Colors.grey)),
-            ],
-          )
-        ],
       ),
     );
   }

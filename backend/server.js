@@ -23,12 +23,14 @@ const tripRoutes = require('./routes/trip');
 const profileRoutes = require('./routes/profile');
 const friendsRoutes = require('./routes/friends');
 const dataRoutes = require('./routes/data');
+const postRoutes = require('./routes/post');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/trips', tripRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/friends', friendsRoutes);
 app.use('/api/data', dataRoutes);
+app.use('/api', postRoutes);
 
 // Socket.io connection handler
 

@@ -12,11 +12,7 @@ const profileController = {
                 return res.status(404).json({ message: 'User profile not found' });
             }
 
-            // If there's a photo_profil, convert it to a full URL
-            if (profile.photo_profil) {
-                profile.photo_profil = `/uploads/profile_pictures/${profile.photo_profil}`;
-            }
-
+            // No need to modify the path since it's already stored with the full path
             res.json(profile);
         } catch (error) {
             console.error('Error getting user profile:', error);
@@ -38,7 +34,8 @@ const profileController = {
             // Handle profile picture
             let photo_profil = null;
             if (req.files && req.files.profile_image) {
-                photo_profil = req.files.profile_image[0].filename;
+                // Save the full path including /uploads/profile_pictures/
+                photo_profil = `/uploads/profile_pictures/${req.files.profile_image[0].filename}`;
             }
 
             const profileData = {
@@ -52,10 +49,7 @@ const profileController = {
             
             res.json({ 
                 message: 'Profile updated successfully',
-                profile: {
-                    ...profileData,
-                    photo_profil: photo_profil ? `/uploads/profile_pictures/${photo_profil}` : null
-                }
+                profile: profileData
             });
         } catch (error) {
             console.error('Error updating user profile:', error);

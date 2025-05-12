@@ -1,4 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:frontend/services/api_service.dart';
+import 'package:http/http.dart' as http;
 import 'package:frontend/screens/auth/info_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -34,7 +37,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     super.dispose();
   }
 
-  void _signUp() {
+  Future<void> _signUp() async {
     setState(() {
       firstNameError = firstnameController.text.isEmpty ? "First name is required" : null;
       lastNameError = lastnameController.text.isEmpty ? "Last name is required" : null;
@@ -54,7 +57,34 @@ class _SignUpScreenState extends State<SignUpScreen> {
         emailError == null &&
         passwordError == null &&
         confirmPasswordError == null) {
-      print("Inscription réussie !");
+      try {
+        final response = await http.post(
+          Uri.parse('${Environment.apiHost}/api/auth/register'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'nom': lastnameController.text,
+            'prenom': firstnameController.text,
+            'email': emailController.text,
+            'mot_de_passe': passwordController.text,
+          }),
+        );
+
+        if (response.statusCode == 200) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) =>  ConfirmationScreen()),
+          );
+        } else {
+          final data = jsonDecode(response.body);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(data['message'] ?? 'Registration failed')),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('An error occurred. Please try again.')),
+        );
+      }
     }
   }
 
@@ -107,7 +137,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   controller: firstnameController,
                   decoration: InputDecoration(
                     labelText: 'First Name',
-                    hintText: 'First Name',
                     filled: true,
                     fillColor: Colors.grey[100],
                     border: OutlineInputBorder(
@@ -125,7 +154,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   controller: lastnameController,
                   decoration: InputDecoration(
                     labelText: 'Last Name',
-                    hintText: 'Last Name',
                     filled: true,
                     fillColor: Colors.grey[100],
                     border: OutlineInputBorder(
@@ -143,7 +171,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   controller: emailController,
                   decoration: InputDecoration(
                     labelText: 'Email',
-                    hintText: 'uihut@gmail.com',
+                    hintText: 'you@example.com',
                     filled: true,
                     fillColor: Colors.grey[100],
                     border: OutlineInputBorder(
@@ -162,7 +190,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
                     labelText: 'Password',
-                    hintText: '********',
                     filled: true,
                     fillColor: Colors.grey[100],
                     border: OutlineInputBorder(
@@ -191,7 +218,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   obscureText: _obscureConfirmPassword,
                   decoration: InputDecoration(
                     labelText: 'Confirm Password',
-                    hintText: '********',
                     filled: true,
                     fillColor: Colors.grey[100],
                     border: OutlineInputBorder(
@@ -219,19 +245,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: () {
-  _signUp(); // Appel de la logique d'inscription
-
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => ConfirmationScreen(),
-    ),
-  );
-},
-
+                    onPressed: _signUp,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFF24A500),
+                      backgroundColor: const Color(0xFF24A500),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),

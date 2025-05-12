@@ -1,5 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:frontend/main_screen.dart';
 import 'package:frontend/screens/auth/signup_screen.dart';
+import 'package:frontend/services/api_service.dart';
+import 'package:frontend/models/user.dart';
+import 'package:http/http.dart' as http;
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -12,6 +18,56 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   bool _obscureText = true;
+
+
+
+
+
+Future<void> _loginUser() async {
+  final String email = emailController.text.trim();
+  final String motDePasse = passwordController.text.trim();
+
+  if (email.isEmpty || motDePasse.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Veuillez remplir tous les champs')),
+    );
+    return;
+  }
+   
+  try {
+    final response = await http.post(
+      Uri.parse('${Environment.apiHost}/api/auth/login'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': email,
+        'mot_de_passe': motDePasse,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final responseData = jsonDecode(response.body);
+      print('Login response: $responseData'); // Debug print
+      
+      // Store the user data
+      User.setUserData(responseData['user']);
+      
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const MainScreen()),
+      );
+    } else {
+      final responseData = jsonDecode(response.body);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(responseData['message'] ?? 'Erreur de connexion')),
+      );
+    }
+  } catch (e) {
+    print('Login error: $e'); // Debug print
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Erreur: $e')),
+    );
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -117,9 +173,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    onPressed: () {
-                    
-                        
+                    onPressed: () async {
+                    await _loginUser();
+                     
                       
                     },
                     child: const Text(

@@ -12,7 +12,7 @@ const Trip = {
                 LEFT JOIN ville va ON v.id_ville_destination = va.id_ville
             `);
 
-            // Get participants and activities for each trip
+            // Get participants, activities, and images for each trip
             for (let trip of trips) {
                 const [participants] = await db.query(`
                     SELECT p.*, u.nom, u.prenom, u.email, u.photo_profil
@@ -27,6 +27,18 @@ const Trip = {
                     JOIN voyage_activities va ON a.id_activity = va.id_activity
                     WHERE va.id_voyage = ?
                 `, [trip.id_voyage]);
+
+                const [images] = await db.query(`
+                    SELECT chemin
+                    FROM images
+                    WHERE id_voyage = ?
+                `, [trip.id_voyage]);
+
+                // Add the correct path prefix to images
+                trip.images = images.map(img => ({
+                    ...img,
+                    chemin: `/uploads/trip_images/${img.chemin}`
+                }));
 
                 trip.participants = participants;
                 trip.activities = activities;
@@ -69,10 +81,23 @@ const Trip = {
                 WHERE va.id_voyage = ?
             `, [tripId]);
 
+            const [images] = await db.query(`
+                SELECT chemin
+                FROM images
+                WHERE id_voyage = ?
+            `, [tripId]);
+
+            // Add the correct path prefix to images
+            const formattedImages = images.map(img => ({
+                ...img,
+                chemin: `/uploads/trip_images/${img.chemin}`
+            }));
+
             return {
                 ...trip,
                 participants,
-                activities
+                activities,
+                images: formattedImages
             };
         } catch (error) {
             console.error('Error in getTripDetails:', error);
@@ -139,6 +164,8 @@ const Trip = {
 
     getTripDetailsById: async (tripId) => {
         try {
+            console.log('🔍 Fetching trip details for ID:', tripId);
+            
             const [trip] = await db.query(`
                 SELECT v.*, 
                        vd.nom_ville as ville_depart,
@@ -150,8 +177,11 @@ const Trip = {
             `, [tripId]);
 
             if (!trip) {
+                console.log('❌ No trip found with ID:', tripId);
                 return null;
             }
+
+            console.log('✅ Trip found:', trip);
 
             const [participants] = await db.query(`
                 SELECT p.*, u.nom, u.prenom, u.email, u.photo_profil
@@ -167,13 +197,34 @@ const Trip = {
                 WHERE va.id_voyage = ?
             `, [tripId]);
 
-            return {
+            console.log('📸 Fetching images for trip ID:', tripId);
+            const [images] = await db.query(`
+                SELECT chemin
+                FROM images
+                WHERE id_voyage = ?
+            `, [tripId]);
+            
+            console.log('📸 Raw images from database:', images);
+
+            // Add the correct path prefix to images
+            const formattedImages = images.map(img => ({
+                ...img,
+                chemin: `/uploads/trip_images/${img.chemin}`
+            }));
+
+            console.log('📸 Formatted images:', formattedImages);
+
+            const result = {
                 ...trip,
                 participants,
-                activities
+                activities,
+                images: formattedImages
             };
+
+            console.log('✅ Final response:', result);
+            return result;
         } catch (error) {
-            console.error('Error in getTripDetailsById:', error);
+            console.error('❌ Error in getTripDetailsById:', error);
             throw error;
         }
     },

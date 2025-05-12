@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/screens/auth/login_screen.dart';
 import 'package:frontend/screens/profile/editerProfil_screen.dart';
+import 'package:frontend/models/user.dart';
+import 'package:frontend/services/api_service.dart';
+import 'package:frontend/screens/home/home_screen.dart';
 
 const Color primaryColor = Color(0xFF0054A5);
 
@@ -10,107 +13,120 @@ class CustomProfileScreen extends StatefulWidget {
 }
 
 class _CustomProfileScreenState extends State<CustomProfileScreen> {
-  final String name = "Khalid Ayaou";
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            const SizedBox(height: 8),
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => OffersPage()),
+        );
+        return false;
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: Column(
+            children: [
+              const SizedBox(height: 8),
 
-            // Header
-            Padding(
-              padding: const EdgeInsets.only(
-                  top: 24, left: 12, right: 12, bottom: 8),
-              child: Row(
+              // Header
+              Padding(
+                padding: const EdgeInsets.only(
+                    top: 24, left: 12, right: 12, bottom: 8),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back_ios, color: primaryColor),
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => OffersPage()),
+                        );
+                      },
+                    ),
+                    const SizedBox(width: 4),
+                    const Text(
+                      "Mon profile",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color.fromARGB(255, 43, 84, 164),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
+              // Avatar + nom centré (non cliquable)
+              Column(
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios, color: primaryColor),
-                    onPressed: () => Navigator.pop(context),
+                  CircleAvatar(
+                    radius: 45,
+                    backgroundImage: User.profilePicture != null
+                        ? NetworkImage('${Environment.apiHost}${User.profilePicture}')
+                        : const AssetImage('assets/profile.jpg') as ImageProvider,
                   ),
-                  const SizedBox(width: 4),
-                  const Text(
-                    "Mon profile",
-                    style: TextStyle(
-                      fontSize: 18,
+                  const SizedBox(height: 10),
+                  Text(
+                    '${User.prenom} ${User.nom}',
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Color.fromARGB(255, 43, 84, 164),
+                      color: Color.fromARGB(255, 86, 86, 86),
+                      fontSize: 18,
                     ),
                   ),
                 ],
               ),
-            ),
 
-            const SizedBox(height: 10),
+              const SizedBox(height: 40),
 
-            // Avatar + nom centré (non cliquable)
-            Column(
-              children: [
-                const CircleAvatar(
-                  radius: 45,
-                  backgroundImage:
-                      NetworkImage("https://via.placeholder.com/150"),
+              // Options
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  children: [
+                    ProfileTile(
+                      icon: Icons.edit,
+                      title: "Edit Profile",
+                      textColor: const Color.fromARGB(255, 86, 86, 86),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => EditProfileScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 18),
+                    ProfileTile(
+                      icon: Icons.lock_outline,
+                      title: "Changer mot de passe",
+                      textColor: const Color.fromARGB(255, 86, 86, 86),
+                      onTap: () {},
+                    ),
+                    const SizedBox(height: 18),
+                    ProfileTile(
+                      icon: Icons.logout,
+                      title: "Logout",
+                      textColor: const Color.fromARGB(255, 86, 86, 86),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => (LoginScreen()),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Color.fromARGB(255, 86, 86, 86),
-                    fontSize: 18,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 40),
-
-            // Options
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                children: [
-                  ProfileTile(
-                    icon: Icons.edit,
-                    title: "Edit Profile",
-                    textColor: const Color.fromARGB(255, 86, 86, 86),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => EditProfileScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 18),
-                  ProfileTile(
-                    icon: Icons.lock_outline,
-                    title: "Changer mot de passe",
-                    textColor: const Color.fromARGB(255, 86, 86, 86),
-                    onTap: () {},
-                  ),
-                  const SizedBox(height: 18),
-                  ProfileTile(
-                    icon: Icons.logout,
-                    title: "Logout",
-                    textColor: const Color.fromARGB(255, 86, 86, 86),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => (LoginScreen()),
-                        ),
-                      );
-                    },
-                  ),
-                ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
