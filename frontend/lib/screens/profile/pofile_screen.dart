@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/main_screen.dart';
 import 'package:frontend/screens/auth/login_screen.dart';
 import 'package:frontend/screens/profile/editerProfil_screen.dart';
 import 'package:frontend/models/user.dart';
@@ -17,10 +18,11 @@ class _CustomProfileScreenState extends State<CustomProfileScreen> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => OffersPage()),
-        );
+Navigator.pushReplacement(
+  context,
+  MaterialPageRoute(builder: (context) => MainScreen(initialIndex: 0)),
+);
+
         return false;
       },
       child: Scaffold(
@@ -39,10 +41,10 @@ class _CustomProfileScreenState extends State<CustomProfileScreen> {
                     IconButton(
                       icon: const Icon(Icons.arrow_back_ios, color: primaryColor),
                       onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => OffersPage()),
-                        );
+  Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(builder: (context) => MainScreen(initialIndex: 0)),
+  );
                       },
                     ),
                     const SizedBox(width: 4),

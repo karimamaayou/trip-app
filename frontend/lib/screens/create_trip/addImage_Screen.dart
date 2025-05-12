@@ -113,7 +113,7 @@ class _AddImageScreenState extends State<AddImageScreen> {
 
       // Add activities
       if (tripData['activites'] != null) {
-        final activities = tripData['activites'] as List;
+      final activities = tripData['activites'] as List;
         if (activities.isNotEmpty) {
           request.fields['activites'] = activities.join(',');
         }
