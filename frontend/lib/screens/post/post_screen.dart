@@ -1,18 +1,27 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:frontend/screens/post/ImagePost_screen.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'dart:html' as html;
 
 void main() => runApp(MaterialApp(home: PostsPage()));
 
 class PostsPage extends StatelessWidget {
-  final String dummyText =
-      'Lorem ipsum dolor sit amet, lisis anteen  Sed non ex non enim gravida ullamcorper. Integer at arcu justo. Morbi placerat dolor a libero feugiat, eu feugiat nunc tincidunt. Sed ut nisi ut lorem placerat dignissim. Fusce sollicitudin est non dui lobortis, in interdum velit bibendum';
+  final List<Map<String, dynamic>> posts = [
+    {
+      'username': 'Karim amaayou',
+      'avatar': 'assets/images/image.png',
+      'image': 'assets/images/image1.png',
+      'description': 'Découverte des souks de Marrakech...',
+      'likes': 124,
+      'isLiked': false,
+    },
+    {
+      'username': 'Omar amaayou',
+      'avatar': 'assets/images/image.png',
+      'image': 'assets/images/image2.png',
+      'description': 'Soirée inoubliable à la place Jemaa el-Fna...',
+      'likes': 89,
+      'isLiked': true,
+    },
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -21,13 +30,13 @@ class PostsPage extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            // Header
+            // Header (inchangé)
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Row(
                 children: [
                   CircleAvatar(
-                    backgroundImage: AssetImage('assets/images/marakich.jpeg'),
+                    backgroundImage: AssetImage('assets/images/image.png'),
                     radius: 25,
                   ),
                   SizedBox(width: 10),
@@ -56,8 +65,15 @@ class PostsPage extends StatelessWidget {
             Expanded(
               child: ListView.builder(
                 padding: EdgeInsets.zero,
-                itemCount: 2,
-                itemBuilder: (context, index) => PostCard(dummyText: dummyText),
+                itemCount: posts.length,
+                itemBuilder: (context, index) => PostCard(
+                  username: posts[index]['username'],
+                  avatar: posts[index]['avatar'],
+                  imagePath: posts[index]['image'],
+                  description: posts[index]['description'],
+                  initialLikes: posts[index]['likes'],
+                  isInitiallyLiked: posts[index]['isLiked'],
+                ),
               ),
             ),
           ],
@@ -73,7 +89,7 @@ class PostsPage extends StatelessWidget {
                 formData: [],
               ),
             ),
-          );
+          ); // Navigation vers l'écran de création de post
         },
         child: Icon(Icons.add),
       ),
@@ -82,101 +98,120 @@ class PostsPage extends StatelessWidget {
 }
 
 class PostCard extends StatefulWidget {
-  final String dummyText;
+  final String username;
+  final String avatar;
+  final String imagePath;
+  final String description;
+  final int initialLikes;
+  final bool isInitiallyLiked;
 
-  const PostCard({required this.dummyText});
+  const PostCard({
+    required this.username,
+    required this.avatar,
+    required this.imagePath,
+    required this.description,
+    required this.initialLikes,
+    required this.isInitiallyLiked,
+  });
 
   @override
   _PostCardState createState() => _PostCardState();
 }
 
 class _PostCardState extends State<PostCard> {
-  bool isLiked = false; // Gère l'état du like
+  late bool isLiked;
+  late int likes;
+
+  @override
+  void initState() {
+    super.initState();
+    isLiked = widget.isInitiallyLiked;
+    likes = widget.initialLikes;
+  }
+
+  void _toggleLike() {
+    setState(() {
+      isLiked = !isLiked;
+      likes += isLiked ? 1 : -1;
+    });
+  }
+
+  void _showImageDetail(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ImageDetailPage(imagePath: widget.imagePath),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                ImageDetailPage(imagePath: 'assets/images/marakich.jpeg'),
-          ),
-        );
-      },
-      child: Card(
-        elevation: 4,
-        margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // User info
-              Row(
-                children: [
-                  CircleAvatar(
-                    backgroundImage: AssetImage('assets/images/marakich.jpeg'),
-                    radius: 20,
-                  ),
-                  SizedBox(width: 8),
-                  Text(
-                    'Karim amaayou',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-              SizedBox(height: 10),
-              // Image
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ImageDetailPage(
-                          imagePath: 'assets/images/marakich.jpeg'),
-                    ),
-                  );
-                },
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(3),
-                  child: Image.asset(
-                    'assets/images/marakich.jpeg',
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: 200,
-                  ),
+    return Card(
+      elevation: 4,
+      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // User info
+            Row(
+              children: [
+                CircleAvatar(
+                  backgroundImage: AssetImage(widget.avatar),
+                  radius: 20,
+                ),
+                SizedBox(width: 8),
+                Text(
+                  widget.username,
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            SizedBox(height: 10),
+
+            // Image (maintenant cliquable)
+            GestureDetector(
+              onTap: () => _showImageDetail(context),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(3),
+                child: Image.asset(
+                  widget.imagePath,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: 200,
                 ),
               ),
-              SizedBox(height: 10),
-              // Description
-              Text(widget.dummyText, style: TextStyle(color: Colors.grey[800])),
-              SizedBox(height: 10),
-              // Like row
-              Row(
-                children: [
-                  IconButton(
-                    icon: Icon(
-                      isLiked ? Icons.favorite : Icons.favorite_border,
-                      color: isLiked ? Colors.red : Colors.grey,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        isLiked = !isLiked; // Change l'état de "liked"
-                      });
-                    },
+            ),
+            SizedBox(height: 10),
+
+            // Description
+            Text(
+              widget.description,
+              style: TextStyle(color: Colors.grey[800]),
+            ),
+            SizedBox(height: 10),
+
+            // Like row
+            Row(
+              children: [
+                IconButton(
+                  icon: Icon(
+                    isLiked ? Icons.favorite : Icons.favorite_border,
+                    color: isLiked ? Colors.red : Colors.grey,
                   ),
-                  SizedBox(width: 5),
-                  Text(
-                    '300',
-                    style: TextStyle(color: Colors.red),
-                  ),
-                ],
-              ),
-            ],
-          ),
+                  onPressed: _toggleLike,
+                ),
+                SizedBox(width: 5),
+                Text(
+                  likes.toString(),
+                  style: TextStyle(color: isLiked ? Colors.red : Colors.grey),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -188,87 +223,33 @@ class ImageDetailPage extends StatelessWidget {
 
   const ImageDetailPage({required this.imagePath});
 
-  Future<void> _saveImage(BuildContext context) async {
-    if (kIsWeb) {
-      // 📦 Web : téléchargement via AnchorElement
-
-      final byteData = await rootBundle.load(imagePath);
-      final blob = html.Blob([byteData.buffer.asUint8List()]);
-      final url = html.Url.createObjectUrlFromBlob(blob);
-      final anchor = html.AnchorElement(href: url)
-        ..setAttribute("download", "downloaded_image.jpg")
-        ..click();
-      html.Url.revokeObjectUrl(url);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("✅ Image téléchargée !")),
-      );
-    } else {
-      // 📱 Android / iOS
-      final status = await Permission.storage.request();
-      if (status.isGranted) {
-        final byteData = await rootBundle.load(imagePath);
-        final result = await ImageGallerySaver.saveImage(
-          Uint8List.view(byteData.buffer),
-          quality: 100,
-          name: "downloaded_image",
-        );
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("✅ Image sauvegardée dans la galerie !")),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("❌ Permission refusée.")),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: IconThemeData(color: Color.fromARGB(255, 2, 2, 117)),
-        centerTitle: false,
-        toolbarHeight: 70, // augmente la hauteur totale de l'AppBar
-        titleSpacing: 0, // aligne le titre avec l'icône
-        title: Padding(
-          padding:
-              const EdgeInsets.only(top: 12.0), // déplace le texte vers le bas
-          child: Text(
-            'Aperçu de l\'image',
-            style: TextStyle(
-              color: Color.fromARGB(255, 2, 2, 117),
-            ),
-          ),
-        ),
-        leading: Padding(
-          padding:
-              const EdgeInsets.only(top: 12.0), // déplace l'icône vers le bas
-          child: IconButton(
-            icon: Icon(Icons.arrow_back),
-            onPressed: () {
-              Navigator.pop(context);
-            },
-          ),
+        title: Text('Aperçu',
+            style: TextStyle(color: const Color.fromARGB(255, 10, 7, 169))),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: Image.asset(imagePath, fit: BoxFit.contain),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: ElevatedButton.icon(
-              icon: Icon(Icons.download),
-              label: Text("Télécharger l'image"),
-              onPressed: () => _saveImage(context),
+      body: Center(
+        child: InteractiveViewer(
+          panEnabled: true, // Autorise le déplacement
+          boundaryMargin: EdgeInsets.all(20),
+          minScale: 0.5, // Zoom minimum
+          maxScale: 3.0, // Zoom maximum
+          child: Container(
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.height,
+            child: Image.asset(
+              imagePath,
+              fit: BoxFit
+                  .contain, // Ajuste l'image à l'écran en gardant les proportions
             ),
           ),
-        ],
+        ),
       ),
     );
   }
