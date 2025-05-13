@@ -1,7 +1,7 @@
-
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:frontend/screens/post/ImagePost_screen.dart';
 import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:io' show Platform;
@@ -41,21 +41,24 @@ class _PostsPageState extends State<PostsPage> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
+    if (_scrollController.position.pixels ==
+        _scrollController.position.maxScrollExtent) {
       _loadMorePosts();
     }
   }
 
   Future<void> _loadMorePosts() async {
     if (isLoadingMore) return;
-    
+
     setState(() {
       isLoadingMore = true;
     });
 
     try {
       final response = await http.get(
-        Uri.parse('${Environment.apiHost}/api/posts?page=${currentPage + 1}&limit=$postsPerPage&userId=${User.id}'),
+        Uri.parse(
+          '${Environment.apiHost}/api/posts?page=${currentPage + 1}&limit=$postsPerPage&userId=${User.id}',
+        ),
         headers: {'Authorization': 'Bearer ${User.token}'},
       );
 
@@ -80,7 +83,9 @@ class _PostsPageState extends State<PostsPage> {
   Future<void> _fetchPosts() async {
     try {
       final response = await http.get(
-        Uri.parse('${Environment.apiHost}/api/posts?page=1&limit=$postsPerPage&userId=${User.id}'),
+        Uri.parse(
+          '${Environment.apiHost}/api/posts?page=1&limit=$postsPerPage&userId=${User.id}',
+        ),
         headers: {'Authorization': 'Bearer ${User.token}'},
       );
 
@@ -117,14 +122,19 @@ class _PostsPageState extends State<PostsPage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => CustomProfileScreen()),
+                          builder: (context) => CustomProfileScreen(),
+                        ),
                       );
                     },
                     child: CircleAvatar(
                       radius: 25,
-                      backgroundImage: User.profilePicture != null
-                          ? NetworkImage('${Environment.apiHost}${User.profilePicture}')
-                          : const AssetImage('assets/profile.jpg') as ImageProvider,
+                      backgroundImage:
+                          User.profilePicture != null
+                              ? NetworkImage(
+                                '${Environment.apiHost}${User.profilePicture}',
+                              )
+                              : const AssetImage('assets/profile.jpg')
+                                  as ImageProvider,
                     ),
                   ),
                   SizedBox(width: 10),
@@ -161,33 +171,34 @@ class _PostsPageState extends State<PostsPage> {
 
             // Posts List
             Expanded(
-              child: isLoading
-                  ? Center(child: CircularProgressIndicator())
-                  : RefreshIndicator(
-                      onRefresh: _fetchPosts,
-                      child: ListView.builder(
-                        controller: _scrollController,
-                        padding: EdgeInsets.zero,
-                        itemCount: posts.length + (isLoadingMore ? 1 : 0),
-                        itemBuilder: (context, index) {
-                          if (index == posts.length) {
-                            return Center(
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: CircularProgressIndicator(),
-                              ),
+              child:
+                  isLoading
+                      ? Center(child: CircularProgressIndicator())
+                      : RefreshIndicator(
+                        onRefresh: _fetchPosts,
+                        child: ListView.builder(
+                          controller: _scrollController,
+                          padding: EdgeInsets.zero,
+                          itemCount: posts.length + (isLoadingMore ? 1 : 0),
+                          itemBuilder: (context, index) {
+                            if (index == posts.length) {
+                              return Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                            }
+                            return PostCard(
+                              post: posts[index],
+                              onReactionChanged: () {
+                                // Refresh the post data after reaction
+                                _fetchPosts();
+                              },
                             );
-                          }
-                          return PostCard(
-                            post: posts[index],
-                            onReactionChanged: () {
-                              // Refresh the post data after reaction
-                              _fetchPosts();
-                            },
-                          );
-                        },
+                          },
+                        ),
                       ),
-                    ),
             ),
           ],
         ),
@@ -195,10 +206,10 @@ class _PostsPageState extends State<PostsPage> {
       floatingActionButton: FloatingActionButton(
         backgroundColor: Color(0xFF51D32D),
         onPressed: () {
-          //Navigator.push(
-          //  context,
-          //  MaterialPageRoute(builder: (context) => CreationVoyagePage()),
-          //);
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => ImageScreen(formData: [])),
+          );
         },
         child: Icon(Icons.add, size: 28, color: Colors.white),
         shape: CircleBorder(),
@@ -211,10 +222,7 @@ class PostCard extends StatefulWidget {
   final Map<String, dynamic> post;
   final VoidCallback onReactionChanged;
 
-  const PostCard({
-    required this.post,
-    required this.onReactionChanged,
-  });
+  const PostCard({required this.post, required this.onReactionChanged});
 
   @override
   _PostCardState createState() => _PostCardState();
@@ -256,11 +264,11 @@ class _PostCardState extends State<PostCard> {
   Future<void> _toggleReaction() async {
     try {
       final response = await http.post(
-        Uri.parse('${Environment.apiHost}/api/posts/${widget.post['id_post']}/reactions'),
+        Uri.parse(
+          '${Environment.apiHost}/api/posts/${widget.post['id_post']}/reactions',
+        ),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'id_utilisateur': User.id,
-        }),
+        body: jsonEncode({'id_utilisateur': User.id}),
       );
 
       if (response.statusCode == 200) {
@@ -309,9 +317,11 @@ class _PostCardState extends State<PostCard> {
             Row(
               children: [
                 CircleAvatar(
-                  backgroundImage: profilePicture.isNotEmpty
-                      ? NetworkImage('http://localhost:3000$profilePicture')
-                      : const AssetImage('assets/profile.jpg') as ImageProvider,
+                  backgroundImage:
+                      profilePicture.isNotEmpty
+                          ? NetworkImage('http://localhost:3000$profilePicture')
+                          : const AssetImage('assets/profile.jpg')
+                              as ImageProvider,
                   radius: 20,
                 ),
                 SizedBox(width: 8),
@@ -324,17 +334,14 @@ class _PostCardState extends State<PostCard> {
                     ),
                     Text(
                       _formatDate(widget.post['date_publication']),
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
                     ),
                   ],
                 ),
               ],
             ),
             SizedBox(height: 10),
-            
+
             // Images carousel
             if (images.isNotEmpty)
               Container(
@@ -355,9 +362,11 @@ class _PostCardState extends State<PostCard> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => ImageDetailPage(
-                                  imagePath: 'http://localhost:3000${images[index]}',
-                                ),
+                                builder:
+                                    (_) => ImageDetailPage(
+                                      imagePath:
+                                          'http://localhost:3000${images[index]}',
+                                    ),
                               ),
                             );
                           },
@@ -387,9 +396,10 @@ class _PostCardState extends State<PostCard> {
                               margin: EdgeInsets.symmetric(horizontal: 4),
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: currentImageIndex == index
-                                    ? Colors.white
-                                    : Colors.white.withOpacity(0.5),
+                                color:
+                                    currentImageIndex == index
+                                        ? Colors.white
+                                        : Colors.white.withOpacity(0.5),
                               ),
                             ),
                           ),
@@ -398,13 +408,15 @@ class _PostCardState extends State<PostCard> {
                   ],
                 ),
               ),
-            
+
             SizedBox(height: 10),
             // Post content
-            Text(widget.post['contenu'], 
-                 style: TextStyle(color: Colors.grey[800])),
+            Text(
+              widget.post['contenu'],
+              style: TextStyle(color: Colors.grey[800]),
+            ),
             SizedBox(height: 10),
-            
+
             // Like row
             Row(
               children: [
@@ -441,14 +453,15 @@ class ImageDetailPage extends StatelessWidget {
       final byteData = await rootBundle.load(imagePath);
       final blob = html.Blob([byteData.buffer.asUint8List()]);
       final url = html.Url.createObjectUrlFromBlob(blob);
-      final anchor = html.AnchorElement(href: url)
-        ..setAttribute("download", "downloaded_image.jpg")
-        ..click();
+      final anchor =
+          html.AnchorElement(href: url)
+            ..setAttribute("download", "downloaded_image.jpg")
+            ..click();
       html.Url.revokeObjectUrl(url);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("✅ Image téléchargée !")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("✅ Image téléchargée !")));
     } else {
       // 📱 Android / iOS
       final status = await Permission.storage.request();
@@ -463,9 +476,9 @@ class ImageDetailPage extends StatelessWidget {
           SnackBar(content: Text("✅ Image sauvegardée dans la galerie !")),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("❌ Permission refusée.")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("❌ Permission refusée.")));
       }
     }
   }
@@ -481,18 +494,18 @@ class ImageDetailPage extends StatelessWidget {
         toolbarHeight: 70, // augmente la hauteur totale de l'AppBar
         titleSpacing: 0, // aligne le titre avec l'icône
         title: Padding(
-          padding:
-              const EdgeInsets.only(top: 12.0), // déplace le texte vers le bas
+          padding: const EdgeInsets.only(
+            top: 12.0,
+          ), // déplace le texte vers le bas
           child: Text(
             'Aperçu de l\'image',
-            style: TextStyle(
-              color: Color.fromARGB(255, 2, 2, 117),
-            ),
+            style: TextStyle(color: Color.fromARGB(255, 2, 2, 117)),
           ),
         ),
         leading: Padding(
-          padding:
-              const EdgeInsets.only(top: 12.0), // déplace l'icône vers le bas
+          padding: const EdgeInsets.only(
+            top: 12.0,
+          ), // déplace l'icône vers le bas
           child: IconButton(
             icon: Icon(Icons.arrow_back),
             onPressed: () {
@@ -503,9 +516,7 @@ class ImageDetailPage extends StatelessWidget {
       ),
       body: Column(
         children: [
-          Expanded(
-            child: Image.asset(imagePath, fit: BoxFit.contain),
-          ),
+          Expanded(child: Image.asset(imagePath, fit: BoxFit.contain)),
           Padding(
             padding: const EdgeInsets.all(12.0),
             child: ElevatedButton.icon(
