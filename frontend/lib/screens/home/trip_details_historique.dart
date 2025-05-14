@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/screens/follow_trip/demande_screen.dart';
+import 'package:frontend/screens/follow_trip/members_screen.dart';
 import 'package:frontend/screens/home/quitte_screen.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -379,26 +380,14 @@ class _TripDetailsPageState extends State<TripDetailsHistorique> {
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       GestureDetector(
+                        // In the GestureDetector onTap handler:
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder:
-                                  (_) => MembersPage(
-                                    members:
-                                        participants
-                                            .map(
-                                              (p) => {
-                                                'name':
-                                                    '${p['prenom']} ${p['nom']}'
-                                                        .toString(),
-                                                'role': p['role'].toString(),
-                                                'image':
-                                                    'http://localhost:3000${p['photo_profil']}'
-                                                        .toString(),
-                                              },
-                                            )
-                                            .toList(),
+                                  (context) => MembersScreen(
+                                    // Pass the participants list directly
                                   ),
                             ),
                           );

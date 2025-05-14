@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/screens/chat/chat_screen.dart';
 import 'package:frontend/screens/home/trip_details.dart';
 import 'package:frontend/screens/home/trip_details_historique.dart';
 import 'package:frontend/screens/post/post_screen.dart';
@@ -99,9 +100,7 @@ class _TravelPageState extends State<TravelPage> {
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (context) => TripDetailsHistorique(tripId: 14),
-              ),
+              MaterialPageRoute(builder: (context) => ChatScreen()),
             );
           },
         ),
@@ -114,9 +113,7 @@ class _TravelPageState extends State<TravelPage> {
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (context) => TripDetailsHistorique(tripId: 17),
-              ),
+              MaterialPageRoute(builder: (context) => ChatScreen()),
             );
           },
         ),
