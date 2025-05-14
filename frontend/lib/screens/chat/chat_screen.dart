@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/screens/follow_trip/suivie_screen.dart';
+import 'package:frontend/screens/home/trip_details_historique.dart';
 
 class ChatScreen extends StatelessWidget {
   const ChatScreen({Key? key}) : super(key: key);
@@ -9,32 +11,72 @@ class ChatScreen extends StatelessWidget {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () {},
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => TravelPage()),
+            );
+          },
         ),
         title: Row(
           children: [
             const CircleAvatar(
-              backgroundImage: AssetImage('assets/marrakech.jpg'), // Image circulaire
+              backgroundImage: AssetImage(
+                'assets/marrakech.jpg',
+              ), // Image circulaire
               radius: 16,
             ),
             const SizedBox(width: 8),
             const Text("Marrakech trip"),
+            const Spacer(), // Espace flexible pour pousser l'icône vers la droite
+            IconButton(
+              icon: const Icon(
+                Icons.info,
+                color: Color(0xFF24A500),
+              ), // Icône ajoutée
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TripDetailsHistorique(tripId: 11),
+                  ),
+                );
+              },
+            ),
           ],
         ),
       ),
+
       body: Column(
         children: [
           Expanded(
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                _buildMessageBubble("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod", false, "10:25"),
-                _buildMessageBubble("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris", true, "11:25"),
+                _buildMessageBubble(
+                  "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod",
+                  false,
+                  "10:25",
+                ),
+                _buildMessageBubble(
+                  "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris",
+                  true,
+                  "11:25",
+                ),
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 8.0),
-                  child: Center(child: Text("aujourd'hui", style: TextStyle(color: Colors.grey))),
+                  child: Center(
+                    child: Text(
+                      "aujourd'hui",
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
                 ),
-                _buildMessageBubble("Lorem ipsum dolor sit amet, consectetur", false, "12:25"),
+                _buildMessageBubble(
+                  "Lorem ipsum dolor sit amet, consectetur",
+                  false,
+                  "12:25",
+                ),
               ],
             ),
           ),
@@ -68,15 +110,18 @@ class ChatScreen extends StatelessWidget {
               children: [
                 Text(
                   time,
-                  style: TextStyle(fontSize: 10, color: isSender ? Colors.white70 : Colors.grey),
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: isSender ? Colors.white70 : Colors.grey,
+                  ),
                 ),
                 if (isSender)
                   const Padding(
                     padding: EdgeInsets.only(left: 4),
                     child: Icon(Icons.done_all, size: 14, color: Colors.white),
-                  )
+                  ),
               ],
-            )
+            ),
           ],
         ),
       ),
@@ -106,7 +151,7 @@ class ChatScreen extends StatelessWidget {
             IconButton(
               icon: const Icon(Icons.send, color: Colors.blueAccent),
               onPressed: () {},
-            )
+            ),
           ],
         ),
       ),

@@ -92,111 +92,67 @@ class _TripDetailsPageState extends State<TripDetailsHistorique> {
   }
 
   Widget _buildActionButton() {
-    if (isSendingRequest) {
-      return const SizedBox(
-        width: double.infinity,
-        height: 50,
-        child: Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    if (userParticipationStatus == 'en_attente') {
-      return SizedBox(
-        width: double.infinity,
-        height: 50,
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.grey[300],
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-          onPressed: null,
-          child: const Text(
-            'En attente',
-            style: TextStyle(fontSize: 20, color: Colors.white),
-          ),
-        ),
-      );
-    }
-    if (userParticipationStatus == 'accepte') {
-      return SizedBox(
-        width: double.infinity,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 34, 233, 3),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => DemandeScreen()),
-                  ).then((_) {
-                    _fetchTripDetails();
-                  });
-                },
-                child: const Text(
-                  'Consulter les demandes',
-                  style: TextStyle(fontSize: 20, color: Colors.white),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 241, 66, 2),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (_) => ExclusionVoyage(memberName: '', tripId: 1),
-                    ),
-                  ).then((_) {
-                    _fetchTripDetails();
-                  });
-                },
-                child: const Text(
-                  'Quitter le voyage',
-                  style: TextStyle(fontSize: 20, color: Colors.white),
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
     return SizedBox(
       width: double.infinity,
-      height: 50,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF24A500),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(255, 34, 233, 3),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => DemandeScreen()),
+                ).then((_) {
+                  _fetchTripDetails();
+                });
+              },
+              child: const Text(
+                'Consulter les demandes',
+                style: TextStyle(fontSize: 20, color: Colors.white),
+              ),
+            ),
           ),
-        ),
-        onPressed: _sendJoinRequest,
-        child: const Text(
-          'Rejoindre',
-          style: TextStyle(fontSize: 20, color: Colors.white),
-        ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(255, 241, 66, 2),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder:
+                        (_) => ExclusionVoyage(
+                          memberName: '',
+                          tripId: widget.tripId,
+                        ),
+                  ),
+                ).then((_) {
+                  _fetchTripDetails();
+                });
+              },
+              child: const Text(
+                'Quitter le voyage',
+                style: TextStyle(fontSize: 20, color: Colors.white),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
