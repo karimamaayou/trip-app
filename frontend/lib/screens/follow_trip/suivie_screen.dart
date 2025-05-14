@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/screens/home/trip_details.dart';
+import 'package:frontend/screens/home/trip_details_historique.dart';
+import 'package:frontend/screens/post/post_screen.dart';
 
 class TravelPage extends StatefulWidget {
   @override
@@ -14,7 +17,7 @@ class _TravelPageState extends State<TravelPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // Définit le fond du Scaffold en blanc
+      backgroundColor: Colors.white,
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(kToolbarHeight + 20),
         child: Column(
@@ -53,7 +56,7 @@ class _TravelPageState extends State<TravelPage> {
                   BoxShadow(
                     color: Colors.grey.shade300,
                     blurRadius: 6,
-                    offset: Offset(0, 2), // Ombre vers le bas
+                    offset: Offset(0, 2),
                   ),
                 ],
               ),
@@ -71,9 +74,10 @@ class _TravelPageState extends State<TravelPage> {
             // Contenu selon l'onglet sélectionné
             Expanded(
               child: SingleChildScrollView(
-                child: _selectedIndex == 0
-                    ? _buildCurrentTrips()
-                    : _buildPastTrips(),
+                child:
+                    _selectedIndex == 0
+                        ? _buildCurrentTrips()
+                        : _buildPastTrips(),
               ),
             ),
           ],
@@ -82,7 +86,6 @@ class _TravelPageState extends State<TravelPage> {
     );
   }
 
-  // Les autres méthodes restent inchangées
   Widget _buildCurrentTrips() {
     return Column(
       children: [
@@ -92,6 +95,15 @@ class _TravelPageState extends State<TravelPage> {
           budget: '1500 MAD',
           depart: 'Agadir',
           date: 'juin 25 2025',
+
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TripDetailsHistorique(tripId: 14),
+              ),
+            );
+          },
         ),
         _buildTravelCard(
           title: 'Essaouira Adventure',
@@ -99,6 +111,14 @@ class _TravelPageState extends State<TravelPage> {
           budget: '900 MAD',
           depart: 'Agadir',
           date: 'juillet 5 2025',
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TripDetailsHistorique(tripId: 17),
+              ),
+            );
+          },
         ),
       ],
     );
@@ -113,6 +133,14 @@ class _TravelPageState extends State<TravelPage> {
           budget: '1200 MAD',
           depart: 'Casablanca',
           date: 'avril 14 2024',
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TripDetailsHistorique(tripId: 11),
+              ),
+            );
+          },
         ),
         _buildTravelCard(
           title: 'Tanger trip',
@@ -120,6 +148,14 @@ class _TravelPageState extends State<TravelPage> {
           budget: '1300 MAD',
           depart: 'Rabat',
           date: 'février 3 2024',
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TripDetailsHistorique(tripId: 12),
+              ),
+            );
+          },
         ),
         _buildTravelCard(
           title: 'Tanger trip',
@@ -127,6 +163,14 @@ class _TravelPageState extends State<TravelPage> {
           budget: '1300 MAD',
           depart: 'Rabat',
           date: 'février 3 2024',
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TripDetailsHistorique(tripId: 13),
+              ),
+            );
+          },
         ),
       ],
     );
@@ -138,13 +182,12 @@ class _TravelPageState extends State<TravelPage> {
     required String budget,
     required String depart,
     required String date,
+    VoidCallback? onPressed,
   }) {
     return Card(
       elevation: 3,
       margin: const EdgeInsets.symmetric(vertical: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -161,17 +204,26 @@ class _TravelPageState extends State<TravelPage> {
             SizedBox(height: 12),
             Divider(height: 1, color: Colors.grey.shade300),
             SizedBox(height: 12),
-            _buildInfoRow('Destination', destination,
-                textColor: marrakechBlue, isBold: true, valueSize: 20),
+            _buildInfoRow(
+              'Destination',
+              destination,
+              textColor: marrakechBlue,
+              isBold: true,
+              valueSize: 20,
+            ),
             _buildInfoRow('Budget', budget),
             _buildInfoRow('Lieu de départ', depart),
-            _buildInfoRow('Date départ', date,
-                isLink: true, textColor: Colors.black),
+            _buildInfoRow(
+              'Date départ',
+              date,
+              isLink: true,
+              textColor: Colors.black,
+            ),
             SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: onPressed,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryGreen,
                   padding: const EdgeInsets.symmetric(vertical: 22),
@@ -206,18 +258,16 @@ class _TravelPageState extends State<TravelPage> {
           decoration: BoxDecoration(
             color: _selectedIndex == index ? primaryGreen : Colors.white,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: const Color(0xFFB0B0B0), // gris solide
-              width: 2,
-            ),
+            border: Border.all(color: const Color(0xFFB0B0B0), width: 2),
           ),
           child: Center(
             child: Text(
               text,
               style: TextStyle(
-                color: _selectedIndex == index
-                    ? Colors.white
-                    : const Color.fromARGB(255, 86, 86, 86),
+                color:
+                    _selectedIndex == index
+                        ? Colors.white
+                        : const Color.fromARGB(255, 86, 86, 86),
                 fontWeight: FontWeight.bold,
                 fontSize: 15,
               ),
@@ -244,10 +294,7 @@ class _TravelPageState extends State<TravelPage> {
             flex: 2,
             child: Text(
               label,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade600,
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
             ),
           ),
           Expanded(
