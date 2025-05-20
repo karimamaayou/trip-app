@@ -321,9 +321,10 @@ class _TripDetailsPageState extends State<TripDetailsPage> {
                             MaterialPageRoute(
                               builder: (_) => MembersPage(
                                 members: participants.map((p) => {
-                                  'name': '${p['prenom']} ${p['nom']}'.toString(),
-                                  'role': p['role'].toString(),
-                                  'image': 'http://localhost:3000${p['photo_profil']}'.toString(),
+                                  'nom':  '${p['nom']}',
+                                  'prenom':  '${p['prenom']}',
+                                  'role': p['role'],
+                                  'photo_profil': '${p['photo_profil']}',
                                 }).toList(),
                               ),
                             ),

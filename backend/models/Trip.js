@@ -148,8 +148,13 @@ const Trip = {
     getUserTrips: async (userId) => {
         try {
             const [trips] = await db.query(`
-                SELECT v.id_voyage, v.titre, v.description, v.date_depart, v.date_retour
+                SELECT v.*, 
+                       vd.nom_ville as ville_depart,
+                       va.nom_ville as ville_arrivee,
+                       p.statut
                 FROM voyages v
+                LEFT JOIN ville vd ON v.id_ville_depart = vd.id_ville
+                LEFT JOIN ville va ON v.id_ville_destination = va.id_ville
                 JOIN participations p ON v.id_voyage = p.id_voyage
                 WHERE p.id_voyageur = ?
                 ORDER BY v.date_depart DESC

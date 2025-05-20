@@ -3,6 +3,9 @@ import 'package:frontend/screens/chat/chat_screen.dart';
 import 'package:frontend/screens/home/trip_details.dart';
 import 'package:frontend/screens/home/trip_details_historique.dart';
 import 'package:frontend/screens/post/post_screen.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:frontend/models/user.dart';
 
 class TravelPage extends StatefulWidget {
   @override
@@ -14,6 +17,74 @@ class _TravelPageState extends State<TravelPage> {
   final Color primaryGreen = const Color(0xFF24A500);
   final Color marrakechBlue = const Color(0xFF0054A5);
   final Color borderColor = Colors.grey.shade300;
+  
+  List<Map<String, dynamic>> currentTrips = [];
+  List<Map<String, dynamic>> pastTrips = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserTrips();
+  }
+
+  Future<void> _fetchUserTrips() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final userId = User.getUserId();
+      if (userId == null) {
+        print('User not logged in');
+        return;
+      }
+
+      final response = await http.get(
+        Uri.parse('http://localhost:3000/api/trips/user/${userId}'),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        final now = DateTime.now();
+        
+        setState(() {
+          currentTrips = data.where((trip) {
+            final tripDate = DateTime.parse(trip['date_depart']);
+            return tripDate.isAfter(now);
+          }).map((trip) => {
+            'id': trip['id_voyage'],
+            'title': trip['titre'],
+            'destination': trip['ville_arrivee'],
+            'depart': trip['ville_depart'],
+            'budget': '${trip['budget']} MAD',
+            'date': trip['date_depart'].toString().split('T')[0],
+            'status': trip['statut'] ?? 'Non défini',
+          }).toList();
+
+          pastTrips = data.where((trip) {
+            final tripDate = DateTime.parse(trip['date_depart']);
+            return tripDate.isBefore(now);
+          }).map((trip) => {
+            'id': trip['id_voyage'],
+            'title': trip['titre'],
+            'destination': trip['ville_arrivee'],
+            'depart': trip['ville_depart'],
+            'budget': '${trip['budget']} MAD',
+            'date': DateTime.parse(trip['date_depart']).toString().split(' ')[0],
+            'status': trip['statut'],
+          }).toList();
+
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error fetching user trips: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +96,7 @@ class _TravelPageState extends State<TravelPage> {
           children: [
             SizedBox(height: 18),
             AppBar(
+              automaticallyImplyLeading: false,
               title: Text(
                 'Mes voyages',
                 style: TextStyle(
@@ -74,12 +146,13 @@ class _TravelPageState extends State<TravelPage> {
             SizedBox(height: 24),
             // Contenu selon l'onglet sélectionné
             Expanded(
-              child: SingleChildScrollView(
-                child:
-                    _selectedIndex == 0
+              child: isLoading
+                ? Center(child: CircularProgressIndicator())
+                : SingleChildScrollView(
+                    child: _selectedIndex == 0
                         ? _buildCurrentTrips()
                         : _buildPastTrips(),
-              ),
+                  ),
             ),
           ],
         ),
@@ -88,88 +161,60 @@ class _TravelPageState extends State<TravelPage> {
   }
 
   Widget _buildCurrentTrips() {
-    return Column(
-      children: [
-        _buildTravelCard(
-          title: 'Marrakech trip',
-          destination: 'Marrakech',
-          budget: '1500 MAD',
-          depart: 'Agadir',
-          date: 'juin 25 2025',
+    if (currentTrips.isEmpty) {
+      return Center(
+        child: Text(
+          'Aucun voyage en cours',
+          style: TextStyle(color: Colors.grey),
+        ),
+      );
+    }
 
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => ChatScreen()),
-            );
-          },
-        ),
-        _buildTravelCard(
-          title: 'Essaouira Adventure',
-          destination: 'Essaouira',
-          budget: '900 MAD',
-          depart: 'Agadir',
-          date: 'juillet 5 2025',
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => ChatScreen()),
-            );
-          },
-        ),
-      ],
+    return Column(
+      children: currentTrips.map((trip) => _buildTravelCard(
+        title: trip['title'],
+        destination: trip['destination'],
+        budget: trip['budget'],
+        depart: trip['depart'],
+        date: trip['date'],
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ChatScreen(tripId: trip['id']),
+            ),
+          );
+        },
+      )).toList(),
     );
   }
 
   Widget _buildPastTrips() {
+    if (pastTrips.isEmpty) {
+      return Center(
+        child: Text(
+          'Aucun voyage passé',
+          style: TextStyle(color: Colors.grey),
+        ),
+      );
+    }
+
     return Column(
-      children: [
-        _buildTravelCard(
-          title: 'Fès trip',
-          destination: 'Fès',
-          budget: '1200 MAD',
-          depart: 'Casablanca',
-          date: 'avril 14 2024',
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => TripDetailsHistorique(tripId: 11),
-              ),
-            );
-          },
-        ),
-        _buildTravelCard(
-          title: 'Tanger trip',
-          destination: 'Tanger',
-          budget: '1300 MAD',
-          depart: 'Rabat',
-          date: 'février 3 2024',
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => TripDetailsHistorique(tripId: 12),
-              ),
-            );
-          },
-        ),
-        _buildTravelCard(
-          title: 'Tanger trip',
-          destination: 'Tanger',
-          budget: '1300 MAD',
-          depart: 'Rabat',
-          date: 'février 3 2024',
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => TripDetailsHistorique(tripId: 13),
-              ),
-            );
-          },
-        ),
-      ],
+      children: pastTrips.map((trip) => _buildTravelCard(
+        title: trip['title'],
+        destination: trip['destination'],
+        budget: trip['budget'],
+        depart: trip['depart'],
+        date: trip['date'],
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ChatScreen(tripId: trip['id']),
+            ),
+          );
+        },
+      )).toList(),
     );
   }
 

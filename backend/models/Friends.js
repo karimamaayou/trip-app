@@ -21,7 +21,7 @@ const Friends = {
             // Convert photo_profil paths to full URLs
             friends.forEach(friend => {
                 if (friend.photo_profil) {
-                    friend.photo_profil = `/uploads/profile_pictures/${friend.photo_profil}`;
+                    friend.photo_profil = `${friend.photo_profil}`;
                 }
             });
 

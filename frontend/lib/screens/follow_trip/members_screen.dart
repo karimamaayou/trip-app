@@ -1,32 +1,82 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:frontend/screens/follow_trip/exclusion_screen.dart';
 import 'package:frontend/screens/follow_trip/friends_screen.dart';
 
+class MembersScreen extends StatefulWidget {
+  final int tripId;
+  const MembersScreen({Key? key, required this.tripId}) : super(key: key);
 
+  @override
+  State<MembersScreen> createState() => _MembersScreenState();
+}
 
-class MembersScreen extends StatelessWidget {
-  const MembersScreen({Key? key}) : super(key: key);
+class _MembersScreenState extends State<MembersScreen> {
+  List<Map<String, dynamic>> members = [];
+  List<Map<String, dynamic>> filteredMembers = [];
+  bool isLoading = true;
+  final TextEditingController _searchController = TextEditingController();
 
-  final List<Member> members = const [
-    Member(
-      name: 'Hassan Ben Ali',
-      role: 'organisateur',
-      imageUrl: 'assets/images/outbord2.png',
-    ),
-    Member(
-      name: 'Ahmed Ben Ali',
-      role: 'voyageur',
-      imageUrl: 'assets/images/image1.png',
-    ),
-    Member(
-      name: 'Khalid Ben Ali',
-      role: 'voyageur',
-      imageUrl: 'assets/images/outbord3.png',
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _fetchMembers();
+    _searchController.addListener(_filterMembers);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _filterMembers() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      filteredMembers = members.where((member) {
+        final fullName = '${member['prenom']} ${member['nom']}'.toLowerCase();
+        return fullName.contains(query);
+      }).toList();
+    });
+  }
+
+  Future<void> _fetchMembers() async {
+    setState(() { isLoading = true; });
+    try {
+      final response = await http.get(
+        Uri.parse('http://localhost:3000/api/trips/${widget.tripId}/participants'),
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        setState(() {
+          members = data.map((m) => {
+            'id': m['id_voyageur'],
+            'nom': m['nom'],
+            'prenom': m['prenom'],
+            'role': m['role'],
+            'photo_profil': m['photo_profil'],
+          }).toList();
+          filteredMembers = members;
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to load members');
+      }
+    } catch (e) {
+      setState(() { isLoading = false; });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur lors du chargement des membres: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    // Organisateurs at the top
+    final organisateurs = filteredMembers.where((m) => m['role'] == 'organisateur').toList();
+    final voyageurs = filteredMembers.where((m) => m['role'] != 'organisateur').toList();
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: PreferredSize(
@@ -48,18 +98,16 @@ class MembersScreen extends StatelessWidget {
               iconTheme: const IconThemeData(color: Color(0xFF2B54A4)),
               actions: [
                 Padding(
-                  padding:
-                      const EdgeInsets.only(right: 12.0), // espace à droite
+                  padding: const EdgeInsets.only(right: 12.0),
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      Navigator.of(context).pushReplacement(
+                      Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (context) => const FriendsListScreen(),
+                          builder: (context) => FriendsListScreen(tripId: widget.tripId),
                         ),
                       );
                     },
-                    icon: const Icon(Icons.person_add,
-                        color: Colors.white, size: 20),
+                    icon: const Icon(Icons.person_add, color: Colors.white, size: 20),
                     label: const Text(
                       'Inviter',
                       style: TextStyle(
@@ -71,7 +119,7 @@ class MembersScreen extends StatelessWidget {
                     ),
                     style: ElevatedButton.styleFrom(
                       fixedSize: const Size(120, 40),
-                      backgroundColor: Color.fromARGB(255, 65, 166, 25),
+                      backgroundColor: const Color.fromARGB(255, 65, 166, 25),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -88,7 +136,7 @@ class MembersScreen extends StatelessWidget {
         padding: const EdgeInsets.all(12.0),
         child: Column(
           children: [
-            // Barre de recherche avec ombre simple
+            // Barre de recherche
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -101,10 +149,11 @@ class MembersScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: TextField(
-                  decoration: InputDecoration(
+                  controller: _searchController,
+                  decoration: const InputDecoration(
                     hintText: 'Search here...',
                     border: InputBorder.none,
                     icon: Icon(Icons.search, color: Colors.grey),
@@ -113,85 +162,82 @@ class MembersScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-
             // Liste des membres
             Expanded(
-              child: ListView.separated(
-                itemCount: members.length,
-                separatorBuilder: (context, index) =>
-                    const SizedBox(height: 12),
-                itemBuilder: (context, index) {
-                  final member = members[index];
-                  return Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.1),
-                          spreadRadius: 6,
-                          blurRadius: 8,
-                          offset: const Offset(1, 2),
-                        ),
-                      ],
-                    ),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
-                      leading: CircleAvatar(
-                        radius: 24,
-                        backgroundImage: AssetImage(member.imageUrl),
-                        backgroundColor: Colors.transparent,
-                      ),
-                      title: Text(
-                        member.name,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Text(
-                        member.role,
-                        style: const TextStyle(color: Colors.grey),
-                      ),
-                      trailing: member.role == 'organisateur'
-                          ? const Padding(
-                              padding: EdgeInsets.only(right: 10),
-                              child: Icon(Icons.star, color: Colors.green),
-                            )
-                          : IconButton(
-                              icon: const Icon(
-                                Icons.block,
-                                color: Color.fromARGB(255, 250, 0, 0),
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ListView.separated(
+                      itemCount: organisateurs.length + voyageurs.length,
+                      separatorBuilder: (context, index) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        Map<String, dynamic> member;
+                        bool isOrganisateur = false;
+                        if (index < organisateurs.length) {
+                          member = organisateurs[index];
+                          isOrganisateur = true;
+                        } else {
+                          member = voyageurs[index - organisateurs.length];
+                        }
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.1),
+                                spreadRadius: 6,
+                                blurRadius: 8,
+                                offset: const Offset(1, 2),
                               ),
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ExclusionPage(
-                                      memberName: member.name,
-                                    ),
-                                  ),
-                                );
-                              },
+                            ],
+                          ),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
+                            leading: CircleAvatar(
+                              radius: 24,
+                              backgroundImage: member['photo_profil'] != null && member['photo_profil'].toString().isNotEmpty
+                                  ? NetworkImage('http://localhost:3000${member['photo_profil']}')
+                                  : const AssetImage('assets/images/default_avatar.png') as ImageProvider,
+                              backgroundColor: Colors.transparent,
                             ),
+                            title: Text(
+                              '${member['prenom']} ${member['nom']}',
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            subtitle: Text(
+                              member['role'],
+                              style: const TextStyle(color: Colors.grey),
+                            ),
+                            trailing: isOrganisateur
+                                ? const Padding(
+                                    padding: EdgeInsets.only(right: 10),
+                                    child: Icon(Icons.star, color: Colors.green),
+                                  )
+                                : IconButton(
+                                    icon: const Icon(
+                                      Icons.block,
+                                      color: Color.fromARGB(255, 250, 0, 0),
+                                    ),
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => ExclusionPage(
+                                            memberName: '${member['prenom']} ${member['nom']}',
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
           ],
         ),
       ),
     );
   }
-}
-
-class Member {
-  final String name;
-  final String role;
-  final String imageUrl;
-
-  const Member({
-    required this.name,
-    required this.role,
-    required this.imageUrl,
-  });
 }

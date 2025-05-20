@@ -1,45 +1,118 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:frontend/screens/follow_trip/exclusion_screen.dart';
 
+class DemandeScreen extends StatefulWidget {
+  final int tripId;
 
+  const DemandeScreen({Key? key, required this.tripId}) : super(key: key);
 
-class DemandeScreen extends StatelessWidget {
-  const DemandeScreen({Key? key}) : super(key: key);
+  @override
+  _DemandeScreenState createState() => _DemandeScreenState();
+}
 
-  final List<Member> members = const [
-    Member(
-      name: 'Hassan Ben Ali',
-      role: 'organisateur',
-      imageUrl: 'assets/images/outbord2.png',
+class _DemandeScreenState extends State<DemandeScreen> {
+  List<Map<String, dynamic>> pendingRequests = [];
+  List<Map<String, dynamic>> filteredRequests = [];
+  bool isLoading = true;
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPendingRequests();
+    _searchController.addListener(_filterRequests);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _filterRequests() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      filteredRequests = pendingRequests.where((request) {
+        final fullName = '${request['prenom']} ${request['nom']}'.toLowerCase();
+        return fullName.contains(query);
+      }).toList();
+    });
+  }
+
+  Future<void> _fetchPendingRequests() async {
+    try {
+      final response = await http.get(
+        Uri.parse('http://localhost:3000/api/trips/${widget.tripId}/requests'),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        setState(() {
+          pendingRequests = data.map((request) => {
+            'id_participation': request['id_participation'],
+            'id_voyageur': request['id_voyageur'],
+            'nom': request['nom'],
+            'prenom': request['prenom'],
+            'photo_profil': request['photo_profil'],
+            'date_inscription': request['date_inscription'],
+          }).toList();
+          filteredRequests = pendingRequests;
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to load requests: ${response.body}');
+      }
+    } catch (e) {
+      print('Error fetching pending requests: $e');
+      setState(() {
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur lors du chargement des demandes: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleRequest(int participationId, String action) async {
+    try {
+      final response = await http.post(
+        Uri.parse('http://localhost:3000/api/trips/requests/$participationId/$action'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          pendingRequests.removeWhere((request) => request['id_participation'] == participationId);
+          filteredRequests.removeWhere((request) => request['id_participation'] == participationId);
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(action == 'accept' ? 'Demande acceptée' : 'Demande refusée'),
+            backgroundColor: action == 'accept' ? Colors.green : Colors.red,
+          ),
+        );
+      } else {
+        throw Exception('Failed to $action request');
+      }
+    } catch (e) {
+      print('Error handling request: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur lors du traitement de la demande'),
+          backgroundColor: Colors.red,
     ),
-    Member(
-      name: 'Ahmed Ben Ali',
-      role: 'voyageur',
-      imageUrl: 'assets/images/image1.png',
-    ),
-    Member(
-      name: 'Khalid Ben Ali',
-      role: 'voyageur',
-      imageUrl: 'assets/images/outbord3.png',
-    ),
-    Member(
-      name: 'Khalid Ben Ali',
-      role: 'voyageur',
-      imageUrl: 'assets/images/outbord3.png',
-    ),
-    Member(
-      name: 'Khalid Ben Ali',
-      role: 'voyageur',
-      imageUrl: 'assets/images/outbord3.png',
-    ),
-  ];
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Filtrer uniquement les voyageurs
-    final List<Member> voyageurs =
-        members.where((m) => m.role != 'organisateur').toList();
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -71,10 +144,11 @@ class DemandeScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: TextField(
-                  decoration: InputDecoration(
+                  controller: _searchController,
+                  decoration: const InputDecoration(
                     hintText: 'Search here..',
                     border: InputBorder.none,
                     icon: Icon(Icons.search, color: Colors.grey),
@@ -84,14 +158,22 @@ class DemandeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
-            // Liste des voyageurs
+            // Liste des demandes
             Expanded(
-              child: ListView.separated(
-                itemCount: voyageurs.length,
-                separatorBuilder: (context, index) =>
-                    const SizedBox(height: 12),
+              child: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : filteredRequests.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'Aucune demande en attente',
+                        style: TextStyle(fontSize: 16, color: Colors.grey),
+                      ),
+                    )
+                  : ListView.separated(
+                      itemCount: filteredRequests.length,
+                      separatorBuilder: (context, index) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
-                  final member = voyageurs[index];
+                        final request = filteredRequests[index];
                   return Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -107,14 +189,18 @@ class DemandeScreen extends StatelessWidget {
                     ),
                     child: ListTile(
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
                       leading: CircleAvatar(
                         radius: 24,
-                        backgroundImage: AssetImage(member.imageUrl),
+                              backgroundImage: NetworkImage(
+                                'http://localhost:3000${request['photo_profil']}',
+                              ),
                         backgroundColor: Colors.transparent,
                       ),
                       title: Text(
-                        member.name,
+                              '${request['prenom']} ${request['nom']}',
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       subtitle: const Text(
@@ -126,9 +212,10 @@ class DemandeScreen extends StatelessWidget {
                         children: [
                           IconButton(
                             icon: const Icon(Icons.check, color: Colors.blue),
-                            onPressed: () {
-                              // Action accepter
-                            },
+                                  onPressed: () => _handleRequest(
+                                    request['id_participation'],
+                                    'accept',
+                                  ),
                           ),
                           IconButton(
                             icon: const Icon(Icons.close, color: Colors.red),
@@ -137,10 +224,15 @@ class DemandeScreen extends StatelessWidget {
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => ExclusionPage(
-                                    memberName: member.name,
+                                          memberName: '${request['prenom']} ${request['nom']}',
                                   ),
                                 ),
+                                    ).then((_) {
+                                      _handleRequest(
+                                        request['id_participation'],
+                                        'reject',
                               );
+                                    });
                             },
                           ),
                         ],
@@ -155,16 +247,4 @@ class DemandeScreen extends StatelessWidget {
       ),
     );
   }
-}
-
-class Member {
-  final String name;
-  final String role;
-  final String imageUrl;
-
-  const Member({
-    required this.name,
-    required this.role,
-    required this.imageUrl,
-  });
 }

@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:frontend/models/user.dart';
+import 'package:frontend/main_screen.dart';
 // TODO: Importer la page OffersPage si nécessaire
 // import 'offers_page.dart';
 
@@ -25,6 +29,46 @@ class _ExclusionPageState extends State<ExclusionVoyage> {
     });
   }
 
+  Future<void> _leaveTrip() async {
+    try {
+      final userId = User.getUserId();
+      if (userId == null) {
+        throw Exception('User ID not found');
+      }
+
+      final response = await http.post(
+        Uri.parse('http://localhost:3000/api/trips/${widget.tripId}/leave'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'userId': userId}),
+      );
+
+      if (response.statusCode == 200) {
+        if (mounted) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => MainScreen(initialIndex: 3)),
+            (route) => false,
+          );
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Vous avez quitté le voyage avec succès')),
+          );
+        }
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to leave trip');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   void _showExclusionDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -44,9 +88,9 @@ class _ExclusionPageState extends State<ExclusionVoyage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    "Vous voulez exclure ${widget.memberName} ?",
-                    style: const TextStyle(fontSize: 14, color: Colors.black87),
+                  const Text(
+                    "Vous voulez quitter ce voyage ?",
+                    style: TextStyle(fontSize: 14, color: Colors.black87),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 20),
@@ -56,7 +100,7 @@ class _ExclusionPageState extends State<ExclusionVoyage> {
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.pop(context); // Ferme le dialog
-                        Navigator.pop(context); // Quitte la page
+                        _leaveTrip(); // Call leave trip function
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFE45517),
@@ -65,7 +109,7 @@ class _ExclusionPageState extends State<ExclusionVoyage> {
                         ),
                       ),
                       child: const Text(
-                        'Quitter', //HHHHHHHHHHHHHHHHHHHHHHHHHH
+                        'Quitter',
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,

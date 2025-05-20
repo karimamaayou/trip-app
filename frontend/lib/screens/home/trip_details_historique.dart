@@ -110,7 +110,9 @@ class _TripDetailsPageState extends State<TripDetailsHistorique> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => DemandeScreen()),
+                  MaterialPageRoute(
+                    builder: (_) => DemandeScreen(tripId: widget.tripId),
+                  ),
                 ).then((_) {
                   _fetchTripDetails();
                 });
@@ -336,15 +338,13 @@ class _TripDetailsPageState extends State<TripDetailsHistorique> {
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       GestureDetector(
-                        // In the GestureDetector onTap handler:
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder:
-                                  (context) => MembersScreen(
-                                    // Pass the participants list directly
-                                  ),
+                              builder: (context) => MembersScreen(
+                                tripId: widget.tripId,
+                              ),
                             ),
                           );
                         },

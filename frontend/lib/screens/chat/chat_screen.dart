@@ -1,160 +1,333 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/main_screen.dart';
 import 'package:frontend/screens/follow_trip/suivie_screen.dart';
+import 'package:frontend/screens/home/trip_details.dart';
 import 'package:frontend/screens/home/trip_details_historique.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:frontend/models/user.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:intl/intl.dart';
 
-class ChatScreen extends StatelessWidget {
-  const ChatScreen({Key? key}) : super(key: key);
+class ChatScreen extends StatefulWidget {
+  final int tripId;
+  const ChatScreen({Key? key, required this.tripId}) : super(key: key);
+
+  @override
+  State<ChatScreen> createState() => _ChatScreenState();
+}
+
+class _ChatScreenState extends State<ChatScreen> {
+  Map<String, dynamic>? tripData;
+  bool isLoading = true;
+  final List<Map<String, dynamic>> messages = [];
+  final TextEditingController _messageController = TextEditingController();
+  late IO.Socket socket;
+  final currentUserId = int.parse(User.getUserId() ?? '0');
+  final scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchTripDetails();
+    _setupSocket();
+    _fetchMessages();
+  }
+
+  void _setupSocket() {
+    socket = IO.io('http://localhost:3000', <String, dynamic>{
+      'transports': ['websocket'],
+      'autoConnect': false,
+    });
+
+    socket.connect();
+    socket.onConnect((_) {
+      print('Connected to socket server');
+      socket.emit('join_trip', widget.tripId);
+    });
+
+    socket.on('new_message', (data) {
+      setState(() {
+        messages.add(data);
+      });
+      _scrollToBottom();
+    });
+
+    socket.on('error', (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $error'), backgroundColor: Colors.red),
+      );
+    });
+  }
+
+  Future<void> _fetchMessages() async {
+    try {
+      final response = await http.get(
+        Uri.parse('http://localhost:3000/api/trips/${widget.tripId}/messages'),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        setState(() {
+          messages.clear();
+          messages.addAll(data.map((msg) => {
+            'id': msg['id_message'],
+            'message': msg['contenu'],
+            'timestamp': DateTime.parse(msg['date_envoi']),
+            'userId': msg['id_auteur'],
+            'sender': {
+              'prenom': msg['prenom'],
+              'nom': msg['nom'],
+              'photo_profil': msg['photo_profil'],
+            },
+          }).toList());
+        });
+        _scrollToBottom();
+      }
+    } catch (e) {
+      print('Error fetching messages: $e');
+    }
+  }
+
+  void _scrollToBottom() {
+    if (scrollController.hasClients) {
+      scrollController.animateTo(
+        scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  void _sendMessage() {
+    if (_messageController.text.trim().isEmpty) return;
+
+    final message = _messageController.text.trim();
+    _messageController.clear();
+
+    socket.emit('send_message', {
+      'tripId': widget.tripId,
+      'userId': currentUserId,
+      'message': message,
+    });
+  }
+
+  Future<void> _fetchTripDetails() async {
+    try {
+      final response = await http.get(
+        Uri.parse('http://localhost:3000/api/trips/details/${widget.tripId}'),
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          tripData = json.decode(response.body);
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error fetching trip details: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    socket.disconnect();
+    _messageController.dispose();
+    scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading || tripData == null) {
+      return Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: const Text("Chat"),
+          backgroundColor: Colors.white,
+          elevation: 0,
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final trip = tripData!['0'];
+    final images = tripData!['images'] as List;
+    String? imageUrl;
+    if (images.isNotEmpty && images[0] is Map<String, dynamic>) {
+      imageUrl = images[0]['chemin']?.toString();
+    }
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => TravelPage()),
-            );
-          },
+          onPressed: () => Navigator.pop(context),
         ),
         title: Row(
           children: [
-            const CircleAvatar(
-              backgroundImage: AssetImage(
-                'assets/marrakech.jpg',
-              ), // Image circulaire
+            CircleAvatar(
+              backgroundImage: imageUrl != null 
+                ? NetworkImage('http://localhost:3000$imageUrl')
+                : const AssetImage('assets/default_trip.jpg') as ImageProvider,
               radius: 16,
             ),
             const SizedBox(width: 8),
-            const Text("Marrakech trip"),
-            const Spacer(), // Espace flexible pour pousser l'icône vers la droite
+            Text(trip['titre']),
+            const Spacer(),
             IconButton(
               icon: const Icon(
                 Icons.info,
                 color: Color(0xFF24A500),
-              ), // Icône ajoutée
+              ),
               onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => TripDetailsHistorique(tripId: 11),
+                    builder: (context) => TripDetailsHistorique(tripId: widget.tripId),
                   ),
                 );
               },
             ),
           ],
         ),
+        backgroundColor: Colors.white,
+        elevation: 0,
       ),
-
       body: Column(
         children: [
           Expanded(
-            child: ListView(
+            child: ListView.builder(
+              controller: scrollController,
               padding: const EdgeInsets.all(16),
+              itemCount: messages.length,
+              itemBuilder: (context, index) {
+                final message = messages[index];
+                final isMe = message['userId'] == currentUserId;
+                final sender = message['sender'];
+                final timestamp = message['timestamp'] is String 
+                  ? DateTime.parse(message['timestamp'])
+                  : message['timestamp'] as DateTime;
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Row(
+                    mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (!isMe) ...[
+                        CircleAvatar(
+                          radius: 16,
+                          backgroundImage: sender['photo_profil'] != null
+                            ? NetworkImage('http://localhost:3000${sender['photo_profil']}')
+                            : const AssetImage('assets/images/default_avatar.png') as ImageProvider,
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      Flexible(
+                        child: Column(
+                          crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
-                _buildMessageBubble(
-                  "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod",
-                  false,
-                  "10:25",
+                            if (!isMe)
+                              Text(
+                                '${sender['prenom']} ${sender['nom']}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
                 ),
-                _buildMessageBubble(
-                  "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris",
-                  true,
-                  "11:25",
-                ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8.0),
-                  child: Center(
+                              ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: isMe ? const Color(0xFF24A500) : Colors.grey[200],
+                                borderRadius: BorderRadius.circular(20),
+                              ),
                     child: Text(
-                      "aujourd'hui",
-                      style: TextStyle(color: Colors.grey),
+                                message['message'],
+                                style: TextStyle(
+                                  color: isMe ? Colors.white : Colors.black,
                     ),
                   ),
                 ),
-                _buildMessageBubble(
-                  "Lorem ipsum dolor sit amet, consectetur",
-                  false,
-                  "12:25",
+                            const SizedBox(height: 4),
+                            Text(
+                              DateFormat('HH:mm').format(timestamp),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
                 ),
               ],
             ),
           ),
-          _buildMessageInput(),
+                      if (isMe) ...[
+                        const SizedBox(width: 8),
+                        CircleAvatar(
+                          radius: 16,
+                          backgroundImage: sender['photo_profil'] != null
+                            ? NetworkImage('http://localhost:3000${sender['photo_profil']}')
+                            : const AssetImage('assets/images/default_avatar.png') as ImageProvider,
+                        ),
+                      ],
+        ],
+      ),
+    );
+              },
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, -2),
+                ),
+              ],
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                    controller: _messageController,
+                decoration: InputDecoration(
+                      hintText: 'Type a message...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide.none,
+                ),
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 10,
+              ),
+            ),
+                    textCapitalization: TextCapitalization.sentences,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                CircleAvatar(
+                  backgroundColor: const Color(0xFF24A500),
+                  child: IconButton(
+                    icon: const Icon(Icons.send, color: Colors.white),
+                    onPressed: _sendMessage,
+                  ),
+            ),
+          ],
+        ),
+          ),
         ],
       ),
     );
   }
-
-  Widget _buildMessageBubble(String text, bool isSender, String time) {
-    return Align(
-      alignment: isSender ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        constraints: const BoxConstraints(maxWidth: 300),
-        decoration: BoxDecoration(
-          color: isSender ? Colors.green : Colors.grey.shade200,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              text,
-              style: TextStyle(color: isSender ? Colors.white : Colors.black),
-            ),
-            const SizedBox(height: 4),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  time,
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: isSender ? Colors.white70 : Colors.grey,
-                  ),
-                ),
-                if (isSender)
-                  const Padding(
-                    padding: EdgeInsets.only(left: 4),
-                    child: Icon(Icons.done_all, size: 14, color: Colors.white),
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMessageInput() {
-    return SafeArea(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.add, color: Colors.grey),
-            const SizedBox(width: 8),
-            Expanded(
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: "Écris ton message...",
-                  border: InputBorder.none,
-                ),
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.send, color: Colors.blueAccent),
-              onPressed: () {},
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
+

@@ -1,28 +1,131 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/screens/follow_trip/members_screen.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:frontend/models/user.dart';
 
+class FriendsListScreen extends StatefulWidget {
+  final int tripId;
+  const FriendsListScreen({Key? key, required this.tripId}) : super(key: key);
 
+  @override
+  State<FriendsListScreen> createState() => _FriendsListScreenState();
+}
 
-class FriendsListScreen extends StatelessWidget {
-  const FriendsListScreen({Key? key}) : super(key: key);
+class _FriendsListScreenState extends State<FriendsListScreen> {
+  List<Map<String, dynamic>> friends = [];
+  List<Map<String, dynamic>> filteredFriends = [];
+  bool isLoading = true;
+  final TextEditingController _searchController = TextEditingController();
 
-  final List<Friend> friends = const [
-    Friend(
-      name: 'Hassan Ben Ali',
-      status: 'Inviter',
-      imageUrl: 'assets/images/outbord2.png',
+  @override
+  void initState() {
+    super.initState();
+    _fetchFriends();
+    _searchController.addListener(_filterFriends);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _filterFriends() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      filteredFriends = friends.where((friend) {
+        final fullName = '${friend['prenom']} ${friend['nom']}'.toLowerCase();
+        return fullName.contains(query);
+      }).toList();
+    });
+  }
+
+  Future<void> _fetchFriends() async {
+    setState(() { isLoading = true; });
+    try {
+      final userId = User.getUserId();
+      if (userId == null) {
+        throw Exception('User not logged in');
+      }
+
+      // Fetch friends
+      final friendsResponse = await http.get(
+        Uri.parse('http://localhost:3000/api/friends/$userId'),
+      );
+
+      if (friendsResponse.statusCode == 200) {
+        final List<dynamic> friendsData = json.decode(friendsResponse.body);
+        
+        // Fetch trip members to check who's already a member
+        final membersResponse = await http.get(
+          Uri.parse('http://localhost:3000/api/trips/${widget.tripId}/participants'),
+        );
+
+        List<int> memberIds = [];
+        if (membersResponse.statusCode == 200) {
+          final List<dynamic> membersData = json.decode(membersResponse.body);
+          memberIds = membersData.map((m) => m['id_voyageur'] as int).toList();
+        }
+
+        setState(() {
+          friends = friendsData.map((friend) => {
+            'id': friend['id_ami'],
+            'nom': friend['nom'],
+            'prenom': friend['prenom'],
+            'photo_profil': friend['photo_profil'],
+            'status': memberIds.contains(friend['id_ami']) ? 'Membre' : 'Inviter',
+          }).toList();
+          filteredFriends = friends;
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to load friends');
+      }
+    } catch (e) {
+      setState(() { isLoading = false; });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur lors du chargement des amis: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  Future<void> _handleInvite(int friendId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('http://localhost:3000/api/trips/${widget.tripId}/invite'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'userId': friendId}),
+      );
+
+      if (response.statusCode == 200) {
+        // Update the friend's status in the list
+        setState(() {
+          final index = friends.indexWhere((f) => f['id'] == friendId);
+          if (index != -1) {
+            friends[index]['status'] = 'Envoye';
+            filteredFriends = friends;
+          }
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Invitation envoyée avec succès'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        throw Exception('Failed to send invitation');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur lors de l\'envoi de l\'invitation: $e'),
+          backgroundColor: Colors.red,
     ),
-    Friend(
-      name: 'Ahmed Ben Ali',
-      status: 'Envoye',
-      imageUrl: 'assets/images/image1.png',
-    ),
-    Friend(
-      name: 'Khalid Ben Ali',
-      status: 'Inviter',
-      imageUrl: 'assets/images/outbord3.png',
-    ),
-  ];
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +135,7 @@ class FriendsListScreen extends StatelessWidget {
         preferredSize: Size.fromHeight(kToolbarHeight + 20),
         child: Column(
           children: [
-            const SizedBox(height: 20), // espace ajouté au-dessus
+            const SizedBox(height: 20),
             AppBar(
               title: const Text(
                 'Amis',
@@ -50,7 +153,7 @@ class FriendsListScreen extends StatelessWidget {
                 onPressed: () {
                   Navigator.of(context).pushReplacement(
                     MaterialPageRoute(
-                      builder: (context) => const MembersScreen(),
+                      builder: (context) => MembersScreen(tripId: widget.tripId),
                     ),
                   );
                 },
@@ -63,7 +166,6 @@ class FriendsListScreen extends StatelessWidget {
         padding: const EdgeInsets.all(12.0),
         child: Column(
           children: [
-            // Barre de recherche avec ombre simple
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -76,10 +178,11 @@ class FriendsListScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: TextField(
-                  decoration: InputDecoration(
+                  controller: _searchController,
+                  decoration: const InputDecoration(
                     hintText: 'Search here...',
                     border: InputBorder.none,
                     icon: Icon(Icons.search, color: Colors.grey),
@@ -88,57 +191,21 @@ class FriendsListScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-
-            // Liste d'amis
-            _buildFriendsList(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFriendsList() {
-    return Expanded(
-      child: ListView.separated(
-        itemCount: friends.length,
+            Expanded(
+              child: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : filteredFriends.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'Aucun ami trouvé',
+                        style: TextStyle(fontSize: 16, color: Colors.grey),
+                      ),
+                    )
+                  : ListView.separated(
+                      itemCount: filteredFriends.length,
         separatorBuilder: (context, index) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
-          return FriendListItem(
-            friend: friends[index],
-            onActionPressed: () {
-              debugPrint('${friends[index].status} ${friends[index].name}');
-            },
-          );
-        },
-      ),
-    );
-  }
-}
-
-class Friend {
-  final String name;
-  final String status;
-  final String imageUrl;
-
-  const Friend({
-    required this.name,
-    required this.status,
-    required this.imageUrl,
-  });
-}
-
-class FriendListItem extends StatelessWidget {
-  final Friend friend;
-  final VoidCallback onActionPressed;
-
-  const FriendListItem({
-    required this.friend,
-    required this.onActionPressed,
-    Key? key,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
+                        final friend = filteredFriends[index];
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -153,22 +220,25 @@ class FriendListItem extends StatelessWidget {
         ],
       ),
       child: ListTile(
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         leading: CircleAvatar(
           radius: 24,
-          backgroundImage: AssetImage(friend.imageUrl),
+                              backgroundImage: friend['photo_profil'] != null && friend['photo_profil'].toString().isNotEmpty
+                                ? NetworkImage('http://localhost:3000${friend['photo_profil']}')
+                                : const AssetImage('assets/images/default_avatar.png') as ImageProvider,
           backgroundColor: Colors.transparent,
         ),
         title: Text(
-          friend.name,
+                              '${friend['prenom']} ${friend['nom']}',
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         trailing: ElevatedButton(
-          onPressed: onActionPressed,
+                              onPressed: friend['status'] == 'Inviter'
+                                ? () => _handleInvite(friend['id'])
+                                : null,
           style: ElevatedButton.styleFrom(
             fixedSize: const Size(100, 40),
-            backgroundColor: friend.status == 'Envoye'
+                                backgroundColor: friend['status'] == 'Membre'
                 ? Colors.grey
                 : const Color.fromARGB(255, 25, 154, 8),
             shape: RoundedRectangleBorder(
@@ -176,12 +246,21 @@ class FriendListItem extends StatelessWidget {
             ),
           ),
           child: Text(
-            friend.status,
+                                friend['status'],
             style: const TextStyle(
-                color: Colors.white, fontWeight: FontWeight.bold),
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
             textAlign: TextAlign.center,
             overflow: TextOverflow.ellipsis,
           ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
         ),
       ),
     );
