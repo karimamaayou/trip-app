@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class MembersPage extends StatelessWidget {
   final List<dynamic> members; // Changed from List<Map<String, dynamic>>
 
-  const MembersPage({Key? key, required this.members, required trip}) : super(key: key);
+  const MembersPage({Key? key, required this.members}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
