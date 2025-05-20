@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:frontend/screens/follow_trip/exclusion_screen.dart';
+import 'package:frontend/screens/home/reject_request_screen.dart';
 
 class DemandeScreen extends StatefulWidget {
   final int tripId;
@@ -223,16 +223,18 @@ class _DemandeScreenState extends State<DemandeScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => ExclusionPage(
-                                          memberName: '${request['prenom']} ${request['nom']}',
+                                  builder: (context) => RejectRequestScreen(
+                                    userName: '${request['prenom']} ${request['nom']}',
+                                    participationId: request['id_participation'],
+                                    onRequestRejected: (participationId) {
+                                      setState(() {
+                                        pendingRequests.removeWhere((request) => request['id_participation'] == participationId);
+                                        filteredRequests.removeWhere((request) => request['id_participation'] == participationId);
+                                      });
+                                    },
                                   ),
                                 ),
-                                    ).then((_) {
-                                      _handleRequest(
-                                        request['id_participation'],
-                                        'reject',
                               );
-                                    });
                             },
                           ),
                         ],
