@@ -40,18 +40,53 @@ class _TravelPageState extends State<TravelPage> {
         return;
       }
 
-      final response = await http.get(
+      // First get the trips
+      final tripsResponse = await http.get(
         Uri.parse('http://localhost:3000/api/trips/user/${userId}'),
       );
 
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
+      print('Trips Response Status: ${tripsResponse.statusCode}');
+      print('Trips Response Body: ${tripsResponse.body}');
+
+      if (tripsResponse.statusCode == 200) {
+        final List<dynamic> tripsData = json.decode(tripsResponse.body);
         final now = DateTime.now();
         
+        // For each trip, get the participation count
+        for (var trip in tripsData) {
+          try {
+            // Get participations for this trip
+            final participationResponse = await http.get(
+              Uri.parse('http://localhost:3000/api/participations/trip/${trip['id_voyage']}'),
+            );
+            
+            print('Participation Response for trip ${trip['id_voyage']}:');
+            print('Status: ${participationResponse.statusCode}');
+            print('Body: ${participationResponse.body}');
+
+            if (participationResponse.statusCode == 200) {
+              final List<dynamic> participations = json.decode(participationResponse.body);
+              // Count only accepted participations
+              final acceptedCount = participations.where((p) => 
+                p['statut'] == 'accepte' && p['role'] == 'voyageur'
+              ).length;
+              
+              trip['current_members'] = acceptedCount;
+              print('Trip ${trip['id_voyage']} - Total capacity: ${trip['capacite_max']}, Accepted members: $acceptedCount');
+            } else {
+              print('Error fetching participations for trip ${trip['id_voyage']}: ${participationResponse.statusCode}');
+              trip['current_members'] = 0;
+            }
+          } catch (e) {
+            print('Error processing participations for trip ${trip['id_voyage']}: $e');
+            trip['current_members'] = 0;
+          }
+        }
+        
         setState(() {
-          currentTrips = data.where((trip) {
-            final tripDate = DateTime.parse(trip['date_depart']);
-            return tripDate.isAfter(now);
+          currentTrips = tripsData.where((trip) {
+            final returnDate = DateTime.parse(trip['date_retour'] ?? trip['date_depart']);
+            return returnDate.isAfter(now);
           }).map((trip) => {
             'id': trip['id_voyage'],
             'title': trip['titre'],
@@ -59,21 +94,36 @@ class _TravelPageState extends State<TravelPage> {
             'depart': trip['ville_depart'],
             'budget': '${trip['budget']} MAD',
             'date': trip['date_depart'].toString().split('T')[0],
-            'status': trip['statut'] ?? 'Non défini',
+            'return_date': trip['date_retour']?.toString().split('T')[0] ?? trip['date_depart'].toString().split('T')[0],
+            'total_members': trip['capacite_max'] ?? 0,
+            'current_members': trip['current_members'] ?? 0,
           }).toList();
 
-          pastTrips = data.where((trip) {
-            final tripDate = DateTime.parse(trip['date_depart']);
-            return tripDate.isBefore(now);
+          pastTrips = tripsData.where((trip) {
+            final returnDate = DateTime.parse(trip['date_retour'] ?? trip['date_depart']);
+            return returnDate.isBefore(now);
           }).map((trip) => {
             'id': trip['id_voyage'],
             'title': trip['titre'],
             'destination': trip['ville_arrivee'],
             'depart': trip['ville_depart'],
             'budget': '${trip['budget']} MAD',
-            'date': DateTime.parse(trip['date_depart']).toString().split(' ')[0],
-            'status': trip['statut'],
+            'date': trip['date_depart'].toString().split('T')[0],
+            'return_date': trip['date_retour']?.toString().split('T')[0] ?? trip['date_depart'].toString().split('T')[0],
+            'total_members': trip['capacite_max'] ?? 0,
+            'current_members': trip['current_members'] ?? 0,
           }).toList();
+
+          // Debug print to verify the counts
+          print('\nFinal Member Counts:');
+          print('Current trips:');
+          for (var trip in currentTrips) {
+            print('Trip ${trip['id']} (${trip['title']}): ${trip['current_members']}/${trip['total_members']} members');
+          }
+          print('\nPast trips:');
+          for (var trip in pastTrips) {
+            print('Trip ${trip['id']} (${trip['title']}): ${trip['current_members']}/${trip['total_members']} members');
+          }
 
           isLoading = false;
         });
@@ -226,66 +276,265 @@ class _TravelPageState extends State<TravelPage> {
     required String date,
     VoidCallback? onPressed,
   }) {
-    return Card(
-      elevation: 3,
-      margin: const EdgeInsets.symmetric(vertical: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: TextStyle(
-                color: const Color.fromARGB(255, 86, 86, 86),
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 12),
-            Divider(height: 1, color: Colors.grey.shade300),
-            SizedBox(height: 12),
-            _buildInfoRow(
-              'Destination',
-              destination,
-              textColor: marrakechBlue,
-              isBold: true,
-              valueSize: 20,
-            ),
-            _buildInfoRow('Budget', budget),
-            _buildInfoRow('Lieu de départ', depart),
-            _buildInfoRow(
-              'Date départ',
-              date,
-              isLink: true,
-              textColor: Colors.black,
-            ),
-            SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: onPressed,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryGreen,
-                  padding: const EdgeInsets.symmetric(vertical: 22),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: Text(
-                  'Consulter',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
+    // Find the trip data to get the return date and member info
+    final tripData = [...currentTrips, ...pastTrips].firstWhere(
+      (trip) => trip['title'] == title,
+      orElse: () => {
+        'return_date': date,
+        'total_members': 0,
+        'current_members': 0,
+      },
+    );
+
+    final isCurrentTrip = DateTime.parse(tripData['return_date']).isAfter(DateTime.now());
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white,
+            Colors.blue.shade50,
           ],
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onPressed,
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header with title and status
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: const TextStyle(
+                            color: Color(0xFF1A237E),
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isCurrentTrip ? primaryGreen.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          isCurrentTrip ? 'En cours' : 'Terminé',
+                          style: TextStyle(
+                            color: isCurrentTrip ? primaryGreen : Colors.grey.shade700,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Destination with icon
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: marrakechBlue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.location_on, color: marrakechBlue, size: 24),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Destination',
+                                style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              Text(
+                                destination,
+                                style: TextStyle(
+                                  color: marrakechBlue,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Trip Details Grid
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Column(
+                      children: [
+                        _buildDetailRow(
+                          Icons.airplanemode_active,
+                          'Départ',
+                          depart,
+                          Icons.calendar_today,
+                          'Date départ',
+                          date,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildDetailRow(
+                          Icons.airplanemode_active,
+                          'Retour',
+                          destination,
+                          Icons.calendar_today,
+                          'Date retour',
+                          tripData['return_date'],
+                        ),
+                        const SizedBox(height: 12),
+                        _buildDetailRow(
+                          Icons.account_balance_wallet,
+                          'Budget',
+                          budget,
+                          Icons.group,
+                          'Membres',
+                          '${tripData['current_members']}/${tripData['total_members']}',
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Action Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: onPressed,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryGreen,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                      ),
+                      icon: const Icon(Icons.chat_bubble_outline),
+                      label: const Text(
+                        'Consulter',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(
+    IconData icon1,
+    String label1,
+    String value1,
+    IconData icon2,
+    String label2,
+    String value2,
+  ) {
+    return Row(
+      children: [
+        Expanded(
+          child: Row(
+            children: [
+              Icon(icon1, size: 20, color: Colors.grey.shade600),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label1,
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 12,
+                      ),
+                    ),
+                    Text(
+                      value1,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Row(
+            children: [
+              Icon(icon2, size: 20, color: Colors.grey.shade600),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label2,
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 12,
+                      ),
+                    ),
+                    Text(
+                      value2,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -316,44 +565,6 @@ class _TravelPageState extends State<TravelPage> {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(
-    String label,
-    String value, {
-    bool isBold = false,
-    bool isLink = false,
-    Color? textColor,
-    double valueSize = 14,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 2,
-            child: Text(
-              label,
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              value,
-              textAlign: TextAlign.end,
-              style: TextStyle(
-                fontSize: valueSize,
-                fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-                color: textColor ?? Colors.black,
-                decoration:
-                    isLink ? TextDecoration.underline : TextDecoration.none,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
