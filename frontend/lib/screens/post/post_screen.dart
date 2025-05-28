@@ -447,39 +447,52 @@ class ImageDetailPage extends StatelessWidget {
   const ImageDetailPage({required this.imagePath});
 
   Future<void> _saveImage(BuildContext context) async {
-    if (kIsWeb) {
-      // 📦 Web : téléchargement via AnchorElement
+    try {
+      if (kIsWeb) {
+        // Pour le web
+        final response = await http.get(Uri.parse(imagePath));
+        final blob = html.Blob([response.bodyBytes]);
+        final url = html.Url.createObjectUrlFromBlob(blob);
+        final anchor =
+            html.AnchorElement(href: url)
+              ..setAttribute("download", "image.jpg")
+              ..click();
+        html.Url.revokeObjectUrl(url);
 
-      final byteData = await rootBundle.load(imagePath);
-      final blob = html.Blob([byteData.buffer.asUint8List()]);
-      final url = html.Url.createObjectUrlFromBlob(blob);
-      final anchor =
-          html.AnchorElement(href: url)
-            ..setAttribute("download", "downloaded_image.jpg")
-            ..click();
-      html.Url.revokeObjectUrl(url);
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("✅ Image téléchargée !")));
-    } else {
-      // 📱 Android / iOS
-      final status = await Permission.storage.request();
-      if (status.isGranted) {
-        final byteData = await rootBundle.load(imagePath);
-        final result = await ImageGallerySaver.saveImage(
-          Uint8List.view(byteData.buffer),
-          quality: 100,
-          name: "downloaded_image",
-        );
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("✅ Image sauvegardée dans la galerie !")),
-        );
-      } else {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text("❌ Permission refusée.")));
+        ).showSnackBar(const SnackBar(content: Text("✅ Image téléchargée !")));
+      } else {
+        // Pour mobile
+        final status = await Permission.storage.request();
+        if (status.isGranted) {
+          final response = await http.get(Uri.parse(imagePath));
+          final result = await ImageGallerySaver.saveImage(
+            response.bodyBytes,
+            quality: 100,
+            name: "image_${DateTime.now().millisecondsSinceEpoch}",
+          );
+
+          if (result['isSuccess']) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("✅ Image sauvegardée dans la galerie !"),
+              ),
+            );
+          } else {
+            throw Exception('Échec de la sauvegarde');
+          }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("❌ Permission refusée.")),
+          );
+        }
       }
+    } catch (e) {
+      print('Erreur lors de la sauvegarde: $e');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("❌ Erreur: ${e.toString()}")));
     }
   }
 
@@ -489,42 +502,61 @@ class ImageDetailPage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: IconThemeData(color: Color.fromARGB(255, 2, 2, 117)),
+        iconTheme: const IconThemeData(color: Color.fromARGB(255, 2, 2, 117)),
         centerTitle: false,
-        toolbarHeight: 70, // augmente la hauteur totale de l'AppBar
-        titleSpacing: 0, // aligne le titre avec l'icône
-        title: Padding(
-          padding: const EdgeInsets.only(
-            top: 12.0,
-          ), // déplace le texte vers le bas
+        toolbarHeight: 70,
+        titleSpacing: 0,
+        title: const Padding(
+          padding: EdgeInsets.only(top: 12.0),
           child: Text(
             'Aperçu de l\'image',
             style: TextStyle(color: Color.fromARGB(255, 2, 2, 117)),
           ),
         ),
         leading: Padding(
-          padding: const EdgeInsets.only(
-            top: 12.0,
-          ), // déplace l'icône vers le bas
+          padding: const EdgeInsets.only(top: 12.0),
           child: IconButton(
-            icon: Icon(Icons.arrow_back),
-            onPressed: () {
-              Navigator.pop(context);
-            },
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context),
           ),
         ),
       ),
       body: Column(
         children: [
-          Expanded(child: Image.asset(imagePath, fit: BoxFit.contain)),
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: ElevatedButton.icon(
-              icon: Icon(Icons.download),
-              label: Text("Télécharger l'image"),
-              onPressed: () => _saveImage(context),
+          Expanded(
+            child: InteractiveViewer(
+              // Permet de zoomer sur l'image
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: Image.network(
+                imagePath,
+                fit: BoxFit.contain,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Center(
+                    child: CircularProgressIndicator(
+                      value:
+                          loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                  loadingProgress.expectedTotalBytes!
+                              : null,
+                    ),
+                  );
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  print('Erreur de chargement de l\'image: $error');
+                  return const Center(
+                    child: Icon(
+                      Icons.error_outline,
+                      color: Colors.red,
+                      size: 50,
+                    ),
+                  );
+                },
+              ),
             ),
           ),
+          Padding(padding: const EdgeInsets.all(12.0)),
         ],
       ),
     );

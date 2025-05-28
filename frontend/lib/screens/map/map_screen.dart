@@ -1,66 +1,258 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:frontend/models/user.dart';
+import 'package:frontend/screens/home/trip_details.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
+class Voyage {
+  final int id;
+  final String nom;
+  final String imageUrl;
+  final LatLng position;
+
+  Voyage({
+    required this.id,
+    required this.nom,
+    required this.imageUrl,
+    required this.position,
+  });
+
+  factory Voyage.fromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      throw Exception('Voyage data is null');
+    }
+
+    final id = json['id'] as int? ?? DateTime.now().millisecondsSinceEpoch;
+    final nom =
+        json['titre'] as String? ?? json['nom'] as String? ?? 'Sans titre';
+    final imagePath = json['chemin'] as String? ?? '';
+    final lat = (json['lat'] as num?)?.toDouble() ?? 0.0;
+    final lng = (json['lng'] as num?)?.toDouble() ?? 0.0;
+
+    String imageUrl =
+        imagePath.isNotEmpty
+            ? 'http://localhost:3000${imagePath.startsWith('/') ? '' : '/'}$imagePath'
+            : 'http://localhost:3000/uploads/default_trip.jpg';
+
+    return Voyage(
+      id: id,
+      nom: nom,
+      imageUrl: imageUrl,
+      position: LatLng(lat, lng),
+    );
+  }
+}
+
 class MoroccoMapDesign extends StatefulWidget {
+  const MoroccoMapDesign({Key? key}) : super(key: key);
+
   @override
   _MoroccoMapDesignState createState() => _MoroccoMapDesignState();
 }
 
 class _MoroccoMapDesignState extends State<MoroccoMapDesign> {
   final MapController _mapController = MapController();
-  final List<Marker> _markers = [];
-
-  // Limites approximatives du Maroc
+  List<Marker> _markers = [];
+  bool _isLoading = true;
+  String? _errorMessage;
   final LatLngBounds moroccoBounds = LatLngBounds(
-    LatLng(27.6, -13.0), // Sud-ouest
-    LatLng(35.9, -0.9),  // Nord-est
+    LatLng(27.6, -13.0),
+    LatLng(35.9, -0.9),
   );
 
-  Future<void> _getCurrentLocation() async {
-    bool serviceEnabled;
-    LocationPermission permission;
+  @override
+  void initState() {
+    super.initState();
+    _fetchVoyages();
+  }
 
-    // Vérifie si les services de localisation sont activés
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      return Future.error('Les services de localisation sont désactivés.');
-    }
-
-    // Vérifie les permissions
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        return Future.error('La permission est refusée.');
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      return Future.error('La permission est refusée de façon permanente.');
-    }
-
-    // Obtenir la position actuelle
-    Position position = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-    );
-
-    final LatLng userPosition = LatLng(position.latitude, position.longitude);
-
+  Future<void> _fetchVoyages() async {
     setState(() {
-      _markers.clear();
-      _markers.add(
-      Marker(
-       point: LatLng(position.latitude, position.longitude),
-       width: 40,
-       height: 40,
-       child: Icon(Icons.location_on),
-       ),
-
-      );
-      _mapController.move(userPosition, 15.0); // Zoom sur la position
+      _isLoading = true;
+      _errorMessage = null;
     });
+
+    try {
+      final response = await http
+          .get(Uri.parse('http://localhost:3000/api/voyages'))
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> responseData = jsonDecode(response.body);
+        final List<Voyage> voyages =
+            responseData
+                .where((item) => item != null)
+                .map<Voyage>((v) => Voyage.fromJson(v as Map<String, dynamic>?))
+                .toList();
+
+        setState(() {
+          _markers = voyages.map(_createMarker).toList();
+          _isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to load voyages: ${response.statusCode}');
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Erreur de chargement des voyages';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Marker _createMarker(Voyage voyage) {
+    return Marker(
+      point: voyage.position,
+      width: 120,
+      height: 140,
+      child: GestureDetector(
+        onTap: () {
+          if (voyage.id != null) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => TripDetailsPage(tripId: voyage.id),
+              ),
+            );
+          }
+        },
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8.0),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8.0),
+                child: Image.network(
+                  voyage.imageUrl,
+                  width: 40,
+                  height: 40,
+                  fit: BoxFit.cover,
+                  errorBuilder:
+                      (context, error, stackTrace) => Container(
+                        width: 40,
+                        height: 40,
+                        color: Colors.grey[300],
+                        child: const Icon(Icons.broken_image, size: 24),
+                      ),
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      width: 40,
+                      height: 40,
+                      color: Colors.grey[200],
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          value:
+                              loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                      loadingProgress.expectedTotalBytes!
+                                  : null,
+                          strokeWidth: 2,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+              margin: const EdgeInsets.only(top: 4),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 2,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+              child: Text(
+                voyage.nom,
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _getCurrentLocation() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return;
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) return;
+      }
+
+      if (permission == LocationPermission.deniedForever) return;
+
+      Position position = await Geolocator.getCurrentPosition();
+      LatLng userPosition = LatLng(position.latitude, position.longitude);
+
+      try {
+        await http.post(
+          Uri.parse('http://localhost:3000/api/map/update'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'userId': int.parse(User.getUserId() ?? '0'),
+            'lat': userPosition.latitude,
+            'lng': userPosition.longitude,
+          }),
+        );
+      } catch (e) {
+        print('Erreur lors de l\'envoi de la position: $e');
+      }
+
+      setState(() {
+        _markers.add(
+          Marker(
+            point: userPosition,
+            width: 40,
+            height: 40,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.person_pin_circle,
+                color: Colors.blue,
+                size: 40,
+              ),
+            ),
+          ),
+        );
+        _mapController.move(userPosition, 15.0);
+      });
+    } catch (e) {
+      print('Erreur de localisation: $e');
+    }
   }
 
   @override
@@ -71,7 +263,7 @@ class _MoroccoMapDesignState extends State<MoroccoMapDesign> {
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
-              center: LatLng(31.7917, -7.0926), // Centre du Maroc
+              center: const LatLng(31.7917, -7.0926),
               zoom: 6.0,
               maxBounds: moroccoBounds,
               maxZoom: 18,
@@ -81,19 +273,52 @@ class _MoroccoMapDesignState extends State<MoroccoMapDesign> {
               TileLayer(
                 urlTemplate:
                     "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                subdomains: ['a', 'b', 'c'],
+                subdomains: const ['a', 'b', 'c'],
               ),
-              MarkerLayer(
-                markers: _markers,
-              ),
+              MarkerLayer(markers: _markers),
             ],
           ),
+          if (_isLoading)
+            Container(
+              color: Colors.black.withOpacity(0.1),
+              child: const Center(child: CircularProgressIndicator()),
+            ),
+          if (_errorMessage != null)
+            Container(
+              color: Colors.black.withOpacity(0.1),
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  margin: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    _errorMessage!,
+                    style: const TextStyle(
+                      color: Colors.red,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+            ),
           Positioned(
             top: 16,
             right: 16,
             child: FloatingActionButton(
               onPressed: _getCurrentLocation,
-              child: Icon(Icons.my_location),
+              backgroundColor: Colors.white,
+              child: const Icon(Icons.my_location, color: Colors.blue),
             ),
           ),
         ],
