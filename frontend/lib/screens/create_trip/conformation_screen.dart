@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/main_screen.dart';
 import 'package:frontend/screens/auth/login_screen.dart';
 import 'package:frontend/screens/home/home_screen.dart';
 
@@ -58,9 +59,7 @@ class Conformation extends StatelessWidget {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => OffersPage(),
-                      ),
+                      MaterialPageRoute(builder: (context) => MainScreen(initialIndex: 0)),
                     );
                   },
                   child: const Text(

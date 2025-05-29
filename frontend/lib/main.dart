@@ -4,6 +4,8 @@ import 'package:frontend/screens/auth/login_screen.dart';
 import 'package:frontend/screens/auth/signup_screen.dart';
 import 'package:frontend/screens/home/home_screen.dart';
 
+// Global navigator key for accessing context from anywhere
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,6 +18,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return   MaterialApp(
+      navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
  
   //  home :TripDetailsPage(),

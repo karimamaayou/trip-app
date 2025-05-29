@@ -2,12 +2,10 @@ const express = require('express');
 const router = express.Router();
 const mapController = require('../controllers/mapController');
 
-router.get('/voyages', mapController.getAllVoyages);
+// Get all voyages
+router.get('/', mapController.getAllVoyages);
 
-
+// Update user location
 router.post('/update', mapController.updateUserLocation);
-
-
-
 
 module.exports = router;

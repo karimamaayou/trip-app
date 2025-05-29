@@ -5,6 +5,10 @@ import 'package:frontend/screens/profile/editerProfil_screen.dart';
 import 'package:frontend/models/user.dart';
 import 'package:frontend/services/api_service.dart';
 import 'package:frontend/screens/home/home_screen.dart';
+import 'package:frontend/screens/profile/friends_list_screen.dart';
+import 'package:frontend/screens/profile/friend_invitations_screen.dart';
+import 'package:frontend/screens/profile/change_password_screen.dart';
+import 'package:frontend/screens/profile/logout_confirmation_screen.dart';
 
 const Color primaryColor = Color(0xFF0054A5);
 
@@ -16,14 +20,15 @@ class CustomProfileScreen extends StatefulWidget {
 class _CustomProfileScreenState extends State<CustomProfileScreen> {
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-Navigator.pushReplacement(
-  context,
-  MaterialPageRoute(builder: (context) => MainScreen(initialIndex: 0)),
-);
-
-        return false;
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (!didPop) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => MainScreen(initialIndex: 0)),
+            );
+        }
       },
       child: Scaffold(
         backgroundColor: Colors.white,
@@ -41,10 +46,10 @@ Navigator.pushReplacement(
                     IconButton(
                       icon: const Icon(Icons.arrow_back_ios, color: primaryColor),
                       onPressed: () {
-  Navigator.pushReplacement(
-    context,
-    MaterialPageRoute(builder: (context) => MainScreen(initialIndex: 0)),
-  );
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => MainScreen(initialIndex: 0)),
+                        );
                       },
                     ),
                     const SizedBox(width: 4),
@@ -67,7 +72,7 @@ Navigator.pushReplacement(
                 children: [
                   CircleAvatar(
                     radius: 45,
-                    backgroundImage: User.profilePicture != null
+                    backgroundImage: User.profilePicture != null && User.profilePicture!.isNotEmpty
                         ? NetworkImage('${Environment.apiHost}${User.profilePicture}')
                         : const AssetImage('assets/profile.jpg') as ImageProvider,
                   ),
@@ -108,7 +113,42 @@ Navigator.pushReplacement(
                       icon: Icons.lock_outline,
                       title: "Changer mot de passe",
                       textColor: const Color.fromARGB(255, 86, 86, 86),
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ChangePasswordScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 18),
+                    ProfileTile(
+                      icon: Icons.people,
+                      title: "Amis",
+                      textColor: const Color.fromARGB(255, 86, 86, 86),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const FriendsListScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 18),
+                    ProfileTile(
+                      icon: Icons.person_add,
+                      title: "Demandes d'ami",
+                      textColor: const Color.fromARGB(255, 86, 86, 86),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const FriendInvitationsScreen(),
+                          ),
+                        );
+                      },
                     ),
                     const SizedBox(height: 18),
                     ProfileTile(
@@ -119,7 +159,7 @@ Navigator.pushReplacement(
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => (LoginScreen()),
+                            builder: (context) => const LogoutConfirmationScreen(),
                           ),
                         );
                       },

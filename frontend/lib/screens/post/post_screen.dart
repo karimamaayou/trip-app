@@ -82,12 +82,20 @@ class _PostsPageState extends State<PostsPage> {
 
   Future<void> _fetchPosts() async {
     try {
+      print('Fetching posts...'); // Debug log
+      final url = Uri.parse(
+        '${Environment.apiHost}/api/posts?page=1&limit=$postsPerPage&userId=${User.id}',
+      );
+      print('Request URL: $url'); // Debug log
+      print('User token: ${User.token}'); // Debug log
+
       final response = await http.get(
-        Uri.parse(
-          '${Environment.apiHost}/api/posts?page=1&limit=$postsPerPage&userId=${User.id}',
-        ),
+        url,
         headers: {'Authorization': 'Bearer ${User.token}'},
       );
+
+      print('Response status code: ${response.statusCode}'); // Debug log
+      print('Response body: ${response.body}'); // Debug log
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
@@ -96,9 +104,15 @@ class _PostsPageState extends State<PostsPage> {
           isLoading = false;
           currentPage = 1;
         });
+        print('Posts loaded successfully: ${posts.length} posts'); // Debug log
+      } else {
+        print('Error response: ${response.body}'); // Debug log
+        setState(() {
+          isLoading = false;
+        });
       }
     } catch (e) {
-      print('Error fetching posts: $e');
+      print('Error fetching posts: $e'); // Debug log
       setState(() {
         isLoading = false;
       });

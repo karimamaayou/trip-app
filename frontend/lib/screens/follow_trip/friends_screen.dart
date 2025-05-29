@@ -17,6 +17,7 @@ class _FriendsListScreenState extends State<FriendsListScreen> {
   List<Map<String, dynamic>> filteredFriends = [];
   bool isLoading = true;
   final TextEditingController _searchController = TextEditingController();
+  Map<int, String> friendStatuses = {}; // Store friend participation statuses
 
   @override
   void initState() {
@@ -51,30 +52,33 @@ class _FriendsListScreenState extends State<FriendsListScreen> {
 
       // Fetch friends
       final friendsResponse = await http.get(
-        Uri.parse('http://localhost:3000/api/friends/$userId'),
+        Uri.parse('http://localhost:3000/api/friends/list/${User.getUserId()}'),
       );
 
       if (friendsResponse.statusCode == 200) {
         final List<dynamic> friendsData = json.decode(friendsResponse.body);
         
-        // Fetch trip members to check who's already a member
-        final membersResponse = await http.get(
-          Uri.parse('http://localhost:3000/api/trips/${widget.tripId}/participants'),
-        );
-
-        List<int> memberIds = [];
-        if (membersResponse.statusCode == 200) {
-          final List<dynamic> membersData = json.decode(membersResponse.body);
-          memberIds = membersData.map((m) => m['id_voyageur'] as int).toList();
+        // Fetch participation status for each friend
+        for (var friend in friendsData) {
+          if (friend['id_utilisateur'] == null) continue; // Skip if no user ID
+          
+          final statusResponse = await http.get(
+            Uri.parse('http://localhost:3000/api/trips/${widget.tripId}/participation-status/${friend['id_utilisateur']}'),
+          );
+          
+          if (statusResponse.statusCode == 200) {
+            final statusData = json.decode(statusResponse.body);
+            friendStatuses[friend['id_utilisateur']] = statusData['status'] ?? 'not_invited';
+          }
         }
 
         setState(() {
-          friends = friendsData.map((friend) => {
-            'id': friend['id_ami'],
-            'nom': friend['nom'],
-            'prenom': friend['prenom'],
+          friends = friendsData.where((friend) => friend['id_utilisateur'] != null).map((friend) => {
+            'id': friend['id_utilisateur'],
+            'nom': friend['nom'] ?? '',
+            'prenom': friend['prenom'] ?? '',
             'photo_profil': friend['photo_profil'],
-            'status': memberIds.contains(friend['id_ami']) ? 'Membre' : 'Inviter',
+            'status': _getButtonText(friendStatuses[friend['id_utilisateur']] ?? 'not_invited'),
           }).toList();
           filteredFriends = friends;
           isLoading = false;
@@ -90,6 +94,38 @@ class _FriendsListScreenState extends State<FriendsListScreen> {
     }
   }
 
+  String _getButtonText(String status) {
+    switch (status) {
+      case 'not_invited':
+        return 'Inviter';
+      case 'en_attente':
+        return 'En attente';
+      case 'accepte':
+        return 'Membre';
+      case 'refuse':
+        return 'Inviter';
+      default:
+        return 'Inviter';
+    }
+  }
+
+  Color _getButtonColor(String status) {
+    switch (status) {
+      case 'not_invited':
+      case 'refuse':
+        return const Color.fromARGB(255, 25, 154, 8);
+      case 'en_attente':
+      case 'accepte':
+        return Colors.grey;
+      default:
+        return const Color.fromARGB(255, 25, 154, 8);
+    }
+  }
+
+  bool _isButtonEnabled(String status) {
+    return status == 'not_invited' || status == 'refuse';
+  }
+
   Future<void> _handleInvite(int friendId) async {
     try {
       final response = await http.post(
@@ -99,11 +135,12 @@ class _FriendsListScreenState extends State<FriendsListScreen> {
       );
 
       if (response.statusCode == 200) {
-        // Update the friend's status in the list
+        // Update the friend's status
         setState(() {
+          friendStatuses[friendId] = 'en_attente';
           final index = friends.indexWhere((f) => f['id'] == friendId);
           if (index != -1) {
-            friends[index]['status'] = 'Envoye';
+            friends[index]['status'] = _getButtonText('en_attente');
             filteredFriends = friends;
           }
         });
@@ -115,14 +152,15 @@ class _FriendsListScreenState extends State<FriendsListScreen> {
           ),
         );
       } else {
-        throw Exception('Failed to send invitation');
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to send invitation');
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Erreur lors de l\'envoi de l\'invitation: $e'),
           backgroundColor: Colors.red,
-    ),
+        ),
       );
     }
   }
@@ -151,11 +189,8 @@ class _FriendsListScreenState extends State<FriendsListScreen> {
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (context) => MembersScreen(tripId: widget.tripId),
-                    ),
-                  );
+                  // Pop back to members screen with a result to indicate a member was added
+                  Navigator.of(context).pop(true);
                 },
               ),
             ),
@@ -203,57 +238,55 @@ class _FriendsListScreenState extends State<FriendsListScreen> {
                     )
                   : ListView.separated(
                       itemCount: filteredFriends.length,
-        separatorBuilder: (context, index) => const SizedBox(height: 12),
-        itemBuilder: (context, index) {
+                      separatorBuilder: (context, index) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
                         final friend = filteredFriends[index];
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 6,
-            blurRadius: 8,
-            offset: const Offset(1, 2),
-          ),
-        ],
-      ),
-      child: ListTile(
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.1),
+                                spreadRadius: 6,
+                                blurRadius: 8,
+                                offset: const Offset(1, 2),
+                              ),
+                            ],
+                          ),
+                          child: ListTile(
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        leading: CircleAvatar(
-          radius: 24,
+                            leading: CircleAvatar(
+                              radius: 24,
                               backgroundImage: friend['photo_profil'] != null && friend['photo_profil'].toString().isNotEmpty
                                 ? NetworkImage('http://localhost:3000${friend['photo_profil']}')
                                 : const AssetImage('assets/images/default_avatar.png') as ImageProvider,
-          backgroundColor: Colors.transparent,
-        ),
-        title: Text(
+                              backgroundColor: Colors.transparent,
+                            ),
+                            title: Text(
                               '${friend['prenom']} ${friend['nom']}',
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        trailing: ElevatedButton(
-                              onPressed: friend['status'] == 'Inviter'
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            trailing: ElevatedButton(
+                              onPressed: _isButtonEnabled(friendStatuses[friend['id']] ?? 'not_invited')
                                 ? () => _handleInvite(friend['id'])
                                 : null,
-          style: ElevatedButton.styleFrom(
-            fixedSize: const Size(100, 40),
-                                backgroundColor: friend['status'] == 'Membre'
-                ? Colors.grey
-                : const Color.fromARGB(255, 25, 154, 8),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          child: Text(
+                              style: ElevatedButton.styleFrom(
+                                fixedSize: const Size(100, 40),
+                                backgroundColor: _getButtonColor(friendStatuses[friend['id']] ?? 'not_invited'),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: Text(
                                 friend['status'],
-            style: const TextStyle(
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
                                 ),
-            textAlign: TextAlign.center,
-            overflow: TextOverflow.ellipsis,
-          ),
+                                textAlign: TextAlign.center,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ),
                         );

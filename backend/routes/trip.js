@@ -7,6 +7,12 @@ const pool = require('../config/db');
 // Get all trips
 router.get('/allTrips', tripController.getAllTrips);
 
+// Get paginated trips
+router.get('/paginated', tripController.getPaginatedTrips);
+
+// Get filtered trips
+router.get('/filtered', tripController.getFilteredTrips);
+
 // Get detailed trip information by ID
 router.get('/details/:tripId', tripController.getTripDetailsById);
 
@@ -178,6 +184,211 @@ router.post('/:tripId/leave', async (req, res) => {
   } catch (error) {
     console.error('Error leaving trip:', error);
     res.status(500).json({ message: 'Error leaving trip', error: error.message });
+  }
+});
+
+// Delete a trip
+router.delete('/:tripId', tripController.deleteTrip);
+
+// New route for removing a member
+router.delete('/:tripId/remove-member/:memberId', tripController.removeMemberFromTrip);
+
+// Check participation status for a friend
+router.get('/:tripId/participation-status/:friendId', async (req, res) => {
+  try {
+    const { tripId, friendId } = req.params;
+    
+    const [participation] = await pool.query(
+      `SELECT statut 
+       FROM participations 
+       WHERE id_voyage = ? AND id_voyageur = ?`,
+      [tripId, friendId]
+    );
+
+    if (participation.length === 0) {
+      return res.json({ status: 'not_invited' });
+    }
+
+    res.json({ status: participation[0].statut });
+  } catch (error) {
+    console.error('Error checking participation status:', error);
+    res.status(500).json({ message: 'Error checking participation status', error: error.message });
+  }
+});
+
+// Modify the invite endpoint to create a notification with trip_id
+router.post('/:tripId/invite', async (req, res) => {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    
+    const { tripId } = req.params;
+    const { userId } = req.body;
+
+    // Check if already invited
+    const [existing] = await connection.query(
+      'SELECT * FROM participations WHERE id_voyage = ? AND id_voyageur = ?',
+      [tripId, userId]
+    );
+
+    if (existing.length > 0) {
+      await connection.rollback();
+      return res.status(400).json({ message: 'User already invited to this trip' });
+    }
+
+    // Add to participations table
+    await connection.query(
+      `INSERT INTO participations (id_voyage, id_voyageur, statut, role) 
+       VALUES (?, ?, 'en_attente', 'voyageur')`,
+      [tripId, userId]
+    );
+
+    // Get trip title for notification
+    const [trip] = await connection.query(
+      'SELECT titre FROM voyages WHERE id_voyage = ?',
+      [tripId]
+    );
+
+    // Create notification with trip_id
+    await connection.query(
+      `INSERT INTO notifications (id_utilisateur, contenu, type, id_trip) 
+       VALUES (?, ?, 'inv_voyage', ?)`,
+      [userId, `Vous avez été invité à rejoindre le voyage "${trip[0].titre}"`, tripId]
+    );
+
+    await connection.commit();
+    res.json({ message: 'Invitation sent successfully' });
+  } catch (error) {
+    await connection.rollback();
+    console.error('Error sending invitation:', error);
+    res.status(500).json({ message: 'Error sending invitation', error: error.message });
+  } finally {
+    connection.release();
+  }
+});
+
+// Add endpoint to handle trip invitation response
+router.post('/notifications/:notificationId/respond', async (req, res) => {
+  const connection = await pool.getConnection();
+  try {
+    const { notificationId } = req.params;
+    const { action } = req.body; // 'accept' or 'reject'
+    const userId = req.query.userId;
+
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID is required' });
+    }
+
+    if (!['accept', 'reject'].includes(action)) {
+      return res.status(400).json({ message: 'Invalid action' });
+    }
+
+    await connection.beginTransaction();
+
+    // Get notification details
+    const [notification] = await connection.query(
+      'SELECT * FROM notifications WHERE id_notification = ? AND id_utilisateur = ? AND type = ?',
+      [notificationId, userId, 'inv_voyage']
+    );
+
+    if (notification.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({ message: 'Notification not found' });
+    }
+
+    const tripId = notification[0].id_trip;
+
+    if (action === 'accept') {
+      // Update participation status to accepted
+      await connection.query(
+        'UPDATE participations SET statut = ? WHERE id_voyage = ? AND id_voyageur = ?',
+        ['accepte', tripId, userId]
+      );
+
+      // Get trip title for notification
+      const [trip] = await connection.query(
+        'SELECT titre FROM voyages WHERE id_voyage = ?',
+        [tripId]
+      );
+
+      // Create notification for trip organizer
+      const [organizer] = await connection.query(
+        'SELECT id_voyageur FROM participations WHERE id_voyage = ? AND role = "organisateur" LIMIT 1',
+        [tripId]
+      );
+
+      if (organizer.length > 0) {
+        const [user] = await connection.query(
+          'SELECT CONCAT(prenom, " ", nom) as full_name FROM utilisateurs WHERE id_utilisateur = ?',
+          [userId]
+        );
+
+        await connection.query(
+          'INSERT INTO notifications (id_utilisateur, contenu, type, id_trip) VALUES (?, ?, ?, ?)',
+          [organizer[0].id_voyageur, `${user[0].full_name} a accepté votre invitation au voyage "${trip[0].titre}"`, 'info', tripId]
+        );
+      }
+    } else {
+      // Remove participation record
+      await connection.query(
+        'DELETE FROM participations WHERE id_voyage = ? AND id_voyageur = ?',
+        [tripId, userId]
+      );
+    }
+
+    // Delete the notification
+    await connection.query(
+      'DELETE FROM notifications WHERE id_notification = ?',
+      [notificationId]
+    );
+
+    await connection.commit();
+    res.json({ 
+      message: action === 'accept' ? 'Invitation acceptée' : 'Invitation refusée',
+      status: action === 'accept' ? 'accepte' : 'refuse',
+      deleted: true
+    });
+  } catch (error) {
+    await connection.rollback();
+    console.error('Error handling trip invitation:', error);
+    res.status(500).json({ message: 'Error handling trip invitation', error: error.message });
+  } finally {
+    connection.release();
+  }
+});
+
+// Add new endpoint to delete a notification
+router.delete('/notifications/:notificationId', async (req, res) => {
+  const connection = await pool.getConnection();
+  try {
+    const { notificationId } = req.params;
+    const userId = req.query.userId;
+
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID is required' });
+    }
+
+    await connection.beginTransaction();
+
+    // Delete the notification
+    const [result] = await connection.query(
+      'DELETE FROM notifications WHERE id_notification = ? AND id_utilisateur = ?',
+      [notificationId, userId]
+    );
+
+    if (result.affectedRows === 0) {
+      await connection.rollback();
+      return res.status(404).json({ message: 'Notification not found' });
+    }
+
+    await connection.commit();
+    res.json({ message: 'Notification deleted successfully', deleted: true });
+  } catch (error) {
+    await connection.rollback();
+    console.error('Error deleting notification:', error);
+    res.status(500).json({ message: 'Error deleting notification', error: error.message });
+  } finally {
+    connection.release();
   }
 });
 

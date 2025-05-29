@@ -1,82 +1,78 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:frontend/models/user.dart'; // Import User model for getUserId
-import 'package:frontend/screens/home/trip_details_historique.dart'; // Import TripDetailsHistorique
+import 'package:frontend/models/user.dart';
+import 'package:frontend/main_screen.dart';
 
-class ExclusionPage extends StatefulWidget {
-  final String memberName;
-  final int memberId; // Add memberId
-  final int tripId; // Add tripId
+class QuitConfirmationScreen extends StatefulWidget {
+  final int tripId;
 
-  const ExclusionPage({super.key, required this.memberName, required this.memberId, required this.tripId}); // Update constructor
+  const QuitConfirmationScreen({super.key, required this.tripId});
 
   @override
-  State<ExclusionPage> createState() => _ExclusionPageState();
+  State<QuitConfirmationScreen> createState() => _QuitConfirmationScreenState();
 }
 
-class _ExclusionPageState extends State<ExclusionPage> {
+class _QuitConfirmationScreenState extends State<QuitConfirmationScreen> {
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _showExclusionDialog(context);
+      _showQuitDialog(context);
     });
   }
 
-  Future<void> _excludeMember() async {
+  Future<void> _quitTrip() async {
     setState(() {
       _isLoading = true;
     });
 
-    final url = 'http://localhost:3000/api/trips/${widget.tripId}/remove-member/${widget.memberId}';
+    final userId = int.parse(User.getUserId() ?? '0');
+    final url = 'http://localhost:3000/api/trips/${widget.tripId}/leave';
 
     try {
-      final response = await http.delete(
+      final response = await http.post(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'userId': int.parse(User.getUserId() ?? '0')}), // Send current user ID for auth
+        body: json.encode({'userId': userId}),
       );
 
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Membre exclu avec succès!'),
+            content: Text('Vous avez quitté le voyage avec succès!'),
             backgroundColor: Colors.green,
           ),
         );
-        // Navigate back to TripDetailsHistorique after successful exclusion
-        // Use pushAndRemoveUntil to clear the stack up to TripDetailsHistorique
-        Navigator.pushAndRemoveUntil(
+        // Navigate to MainScreen with suivie tab (index 3)
+        Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => TripDetailsHistorique(tripId: widget.tripId)),
-          (Route<dynamic> route) => route.settings.name == '/tripDetailsHistorique' || route.isFirst, // Keep only TripDetailsHistorique and root
+          MaterialPageRoute(builder: (context) => MainScreen(initialIndex: 3)),
         );
-
       } else {
         final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'Échec de l\'exclusion du membre.');
+        throw Exception(errorData['message'] ?? 'Échec de quitter le voyage.');
       }
     } catch (e) {
-      print('Error excluding member: $e');
+      print('Error quitting trip: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Erreur: ${e.toString()}'),
           backgroundColor: Colors.red,
         ),
       );
-       setState(() {
+      setState(() {
         _isLoading = false;
       });
     }
   }
 
-  void _showExclusionDialog(BuildContext context) {
+  void _showQuitDialog(BuildContext context) {
     showDialog(
       context: context,
-      barrierDismissible: false, // Make it non-dismissible when loading
+      barrierDismissible: false,
       barrierColor: Colors.black.withOpacity(0.5),
       builder: (context) {
         return Center(
@@ -92,10 +88,11 @@ class _ExclusionPageState extends State<ExclusionPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    "Vous voulez exclure ${widget.memberName} ?",
-                    style: const TextStyle(
-                      fontSize: 14,
+                  const Text(
+                    "Voulez-vous quitter ce voyage ?",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                       color: Colors.black87,
                     ),
                     textAlign: TextAlign.center,
@@ -105,7 +102,7 @@ class _ExclusionPageState extends State<ExclusionPage> {
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: _isLoading ? null : _excludeMember, // Call _excludeMember
+                      onPressed: _isLoading ? null : _quitTrip,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFE45517),
                         shape: RoundedRectangleBorder(
@@ -113,16 +110,20 @@ class _ExclusionPageState extends State<ExclusionPage> {
                         ),
                       ),
                       child: _isLoading
-                          ? SizedBox(
+                          ? const SizedBox(
                               width: 20,
                               height: 20,
-                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
                             )
                           : const Text(
-                              'Exclure',
+                              'Quitter',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
+                                fontSize: 16,
                               ),
                             ),
                     ),
@@ -133,10 +134,9 @@ class _ExclusionPageState extends State<ExclusionPage> {
                     height: 50,
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : () {
-                        // Close the dialog and pop the ExclusionPage screen to return
                         Navigator.pop(context); // Close the dialog
-                        Navigator.pop(context); // Pop the ExclusionPage screen
-                      }, // Pop the dialog and the screen on Annuler
+                        Navigator.pop(context); // Pop the QuitConfirmationScreen
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFBFB5B5),
                         shape: RoundedRectangleBorder(
@@ -148,6 +148,7 @@ class _ExclusionPageState extends State<ExclusionPage> {
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
+                          fontSize: 16,
                         ),
                       ),
                     ),
@@ -163,10 +164,9 @@ class _ExclusionPageState extends State<ExclusionPage> {
 
   @override
   Widget build(BuildContext context) {
-    // This screen is primarily a transparent overlay for the dialog
     return const Scaffold(
-      backgroundColor: Colors.transparent, // Make background transparent
-      body: SizedBox.shrink(), // Use SizedBox.shrink instead of expand
+      backgroundColor: Colors.transparent,
+      body: SizedBox.shrink(),
     );
   }
-}
+} 

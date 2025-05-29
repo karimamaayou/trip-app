@@ -17,177 +17,91 @@ class ChatScreen extends StatefulWidget {
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
+class _ChatScreenState extends State<ChatScreen> {
   Map<String, dynamic>? tripData;
   bool isLoading = true;
   final List<Map<String, dynamic>> messages = [];
   final TextEditingController _messageController = TextEditingController();
-  IO.Socket? socket;
+  late IO.Socket socket;
   final currentUserId = int.parse(User.getUserId() ?? '0');
-  final scrollController = ScrollController();
   bool _isDisposed = false;
-  bool _isScrolling = false;
-  bool _isSocketConnected = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     _fetchTripDetails();
     _setupSocket();
     _fetchMessages();
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _reconnectSocket();
-    } else if (state == AppLifecycleState.paused) {
-      _disconnectSocket();
-    }
+  void dispose() {
+    _isDisposed = true;
+    socket.disconnect();
+    _messageController.dispose();
+    super.dispose();
   }
 
-  void _reconnectSocket() {
-    if (_isDisposed || !mounted) return;
-    if (socket != null && !_isSocketConnected) {
-      _setupSocket();
-    }
-  }
-
-  void _disconnectSocket() {
-    if (socket != null) {
-      socket!.disconnect();
-      _isSocketConnected = false;
-    }
-  }
-
-  void _scrollToBottom() {
-    if (_isDisposed || _isScrolling) return;
-    
-    // Use Future.microtask to ensure we're not in the middle of a build
-    Future.microtask(() {
-      if (!_isDisposed && mounted && scrollController.hasClients) {
-        try {
-          _isScrolling = true;
-          scrollController.animateTo(
-            0,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOut,
-          ).then((_) {
-            _isScrolling = false;
-          }).catchError((error) {
-            print('Error scrolling: $error');
-            _isScrolling = false;
-          });
-        } catch (e) {
-          print('Error in scrollToBottom: $e');
-          _isScrolling = false;
-        }
-      }
-    });
-  }
-
-  void _setupSocket() {
-    if (_isDisposed || !mounted) return;
-
+  Future<void> _fetchTripDetails() async {
     try {
-      socket?.disconnect();
-      socket = IO.io('http://localhost:3000', <String, dynamic>{
-        'transports': ['websocket'],
-        'autoConnect': false,
-        'reconnection': true,
-        'reconnectionAttempts': 5,
-        'reconnectionDelay': 1000,
-      });
+      final response = await http.get(
+        Uri.parse('http://localhost:3000/api/trips/details/${widget.tripId}'),
+      );
 
-      socket!.connect();
-      
-      socket!.onConnect((_) {
-        if (_isDisposed || !mounted) return;
-        print('Connected to socket server');
-        _isSocketConnected = true;
-        socket!.emit('join_trip', widget.tripId);
-      });
-
-      socket!.onDisconnect((_) {
-        if (_isDisposed || !mounted) return;
-        print('Disconnected from socket server');
-        _isSocketConnected = false;
-      });
-
-      socket!.on('new_message', (data) {
-        if (_isDisposed || !mounted) return;
-        
+      if (response.statusCode == 200) {
+        if (!mounted) return;
         setState(() {
-          messages.insert(0, data);
+          tripData = json.decode(response.body);
+          isLoading = false;
         });
-        
-        Future.delayed(const Duration(milliseconds: 100), () {
-          if (!_isDisposed && mounted) {
-            _scrollToBottom();
-          }
-        });
-      });
-
-      socket!.on('error', (error) {
-        if (_isDisposed || !mounted) return;
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $error'), backgroundColor: Colors.red),
-        );
-      });
-    } catch (e) {
-      print('Error setting up socket: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Error connecting to chat server'),
-            backgroundColor: Colors.red,
-          ),
-        );
+      } else {
+        throw Exception('Failed to load trip details');
       }
-    }
-  }
-
-  void _sendMessage() {
-    if (_isDisposed || !mounted || socket == null || !_isSocketConnected) {
+    } catch (e) {
+      print('Error fetching trip details: $e');
+      if (!mounted) return;
+      setState(() {
+        isLoading = false;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Cannot send message: Not connected to chat server'),
+        SnackBar(
+          content: Text('Erreur lors du chargement des détails du voyage: $e'),
           backgroundColor: Colors.red,
         ),
       );
-      return;
     }
+  }
 
-    if (_messageController.text.trim().isEmpty) return;
+  void _setupSocket() {
+    socket = IO.io('http://localhost:3000', <String, dynamic>{
+      'transports': ['websocket'],
+      'autoConnect': false,
+    });
 
-    final message = _messageController.text.trim();
-    _messageController.clear();
+    socket.connect();
+    socket.onConnect((_) {
+      if (_isDisposed) return;
+      print('Connected to socket server');
+      socket.emit('join_trip', widget.tripId);
+    });
 
-    try {
-      socket!.emit('send_message', {
-        'tripId': widget.tripId,
-        'userId': currentUserId,
-        'message': message,
-      });
+    socket.on('new_message', (data) {
+      if (_isDisposed) return;
+      if (!mounted) return;
       
-      Future.delayed(const Duration(milliseconds: 100), () {
-        if (!_isDisposed && mounted) {
-          _scrollToBottom();
-        }
+      setState(() {
+        messages.insert(0, data); // Insert at beginning since we're using reverse
       });
-    } catch (e) {
-      print('Error sending message: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Error sending message'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
+    });
+
+    socket.on('error', (error) {
+      if (_isDisposed) return;
+      if (!mounted) return;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $error'), backgroundColor: Colors.red),
+      );
+    });
   }
 
   Future<void> _fetchMessages() async {
@@ -206,6 +120,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         
         setState(() {
           messages.clear();
+          // Add messages in reverse order since we're using reverse ListView
           messages.addAll(data.reversed.map((msg) => {
             'id': msg['id_message'],
             'message': msg['contenu'],
@@ -218,13 +133,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
             },
           }).toList());
         });
-        
-        // Add a small delay to ensure messages are rendered before scrolling
-        Future.delayed(const Duration(milliseconds: 100), () {
-          if (!_isDisposed && mounted) {
-            _scrollToBottom();
-          }
-        });
       }
     } catch (e) {
       if (_isDisposed) return;
@@ -232,36 +140,18 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _fetchTripDetails() async {
-    try {
-      final response = await http.get(
-        Uri.parse('http://localhost:3000/api/trips/details/${widget.tripId}'),
-      );
+  void _sendMessage() {
+    if (_isDisposed) return;
+    if (_messageController.text.trim().isEmpty) return;
 
-      if (response.statusCode == 200) {
-        setState(() {
-          tripData = json.decode(response.body);
-          isLoading = false;
-        });
-      }
-    } catch (e) {
-      print('Error fetching trip details: $e');
-      setState(() {
-        isLoading = false;
-      });
-    }
-  }
+    final message = _messageController.text.trim();
+    _messageController.clear();
 
-  @override
-  void dispose() {
-    _isDisposed = true;
-    WidgetsBinding.instance.removeObserver(this);
-    _disconnectSocket();
-    socket?.dispose();
-    socket = null;
-    _messageController.dispose();
-    scrollController.dispose();
-    super.dispose();
+    socket.emit('send_message', {
+      'tripId': widget.tripId,
+      'userId': currentUserId,
+      'message': message,
+    });
   }
 
   @override
@@ -271,17 +161,15 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         appBar: AppBar(
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Color(0xFF2B54A4)),
-            onPressed: () {
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => MainScreen(initialIndex: 3),
-                ),
-                (Route<dynamic> route) => false,
-              );
-            },
+            onPressed: () => Navigator.pop(context),
           ),
-          title: const Text("Chat"),
+          title: const Text(
+            "Chat",
+            style: TextStyle(
+              color: Color(0xFF2B54A4),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           backgroundColor: Colors.white,
           elevation: 0,
         ),
@@ -300,15 +188,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Color(0xFF2B54A4)),
-          onPressed: () {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(
-                builder: (context) => MainScreen(initialIndex: 3),
-              ),
-              (Route<dynamic> route) => false,
-            );
-          },
+          onPressed: () => Navigator.pop(context),
         ),
         title: Row(
           children: [
@@ -319,8 +199,16 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
               radius: 16,
             ),
             const SizedBox(width: 8),
-            Text(trip['titre']),
-            const Spacer(),
+            Expanded(
+              child: Text(
+                trip['titre'],
+                style: const TextStyle(
+                  color: Color(0xFF2B54A4),
+                  fontWeight: FontWeight.bold,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
             IconButton(
               icon: const Icon(
                 Icons.info,
@@ -331,7 +219,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                   context,
                   MaterialPageRoute(
                     builder: (context) => TripDetailsHistorique(tripId: widget.tripId),
-                    settings: const RouteSettings(name: '/trip_details'),
                   ),
                 );
               },
@@ -345,12 +232,11 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         children: [
           Expanded(
             child: ListView.builder(
-              controller: scrollController,
               padding: const EdgeInsets.all(16),
               reverse: true, // This makes the list start from bottom
               itemCount: messages.length,
               itemBuilder: (context, index) {
-                final message = messages[index];
+                final message = messages[index]; // No need to reverse index since we're using reverse
                 final isMe = message['userId'] == currentUserId;
                 final sender = message['sender'];
                 final timestamp = message['timestamp'] is String 
@@ -471,4 +357,4 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       ),
     );
   }
-}
+} 

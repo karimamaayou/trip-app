@@ -26,10 +26,10 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 // Get all posts
-router.get('/posts', postController.getAllPosts);
+router.get('/', postController.getAllPosts);
 
 // Create a new post
-router.post('/posts', async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const { content, userId } = req.body;
     
@@ -58,7 +58,7 @@ router.post('/posts', async (req, res) => {
 });
 
 // Upload images for a post
-router.post('/posts/:postId/images', upload.array('images', 6), async (req, res) => {
+router.post('/:postId/images', upload.array('images', 6), async (req, res) => {
   try {
     const postId = req.params.postId;
     const files = req.files;
@@ -103,6 +103,6 @@ router.post('/posts/:postId/images', upload.array('images', 6), async (req, res)
 });
 
 // Toggle reaction on a post
-router.post('/posts/:id_post/reactions', postController.toggleReaction);
+router.post('/:id_post/reactions', postController.toggleReaction);
 
 module.exports = router; 

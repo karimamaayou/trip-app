@@ -4,7 +4,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const pool = require('./config/db');
-const voyageRoutes = require('./routes/map'); // 👈 Assure-toi que ce chemin est correct
+
 // Initialize Express app
 const app = express();
 const server = http.createServer(app);
@@ -26,23 +26,24 @@ const friendsRoutes = require('./routes/friends');
 const dataRoutes = require('./routes/data');
 const postRoutes = require('./routes/post');
 const mapRoutes = require('./routes/map');
-const locationRoutes = require('./routes/map');
-
+const locationRoutes = require('./routes/location');
+const userRoutes = require('./routes/users');
 
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/trips', tripRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/friends', friendsRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/data', dataRoutes);
-app.use('/api', postRoutes);
-app.use('/api', voyageRoutes); // les routes commenceront par /api
-app.use('/api/map', locationRoutes);
+app.use('/api/posts', postRoutes);
+app.use('/api/voyages', mapRoutes);
+app.use('/api/location', locationRoutes);
 
 // Socket.IO setup with CORS
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3001",
+    origin: "*",  // Allow all origins for development
     methods: ["GET", "POST"]
   }
 });
@@ -60,33 +61,44 @@ io.on('connection', (socket) => {
     try {
       const { tripId, userId, message } = data;
       
+      // Insert message into database
       const [result] = await pool.query(
         'INSERT INTO messages_groupe (id_voyage, id_auteur, contenu, date_envoi) VALUES (?, ?, ?, NOW())',
         [tripId, userId, message]
       );
 
+      // Get sender info
       const [users] = await pool.query(
         'SELECT prenom, nom, photo_profil FROM utilisateurs WHERE id_utilisateur = ?',
         [userId]
       );
 
+      if (users.length === 0) {
+        throw new Error('User not found');
+      }
+
       const sender = users[0];
       
-      io.to(`trip_${tripId}`).emit('new_message', {
+      // Format the message data exactly like the working version
+      const messageData = {
         id: result.insertId,
         tripId,
         userId,
         message,
+        timestamp: new Date(),
         sender: {
           prenom: sender.prenom,
           nom: sender.nom,
-          photo_profil: sender.photo_profil
-        },
-        timestamp: new Date()
-      });
+          photo_profil: sender.photo_profil // Send the raw photo path, let the client handle the URL
+        }
+      };
+
+      // Broadcast to all users in the trip room
+      io.to(`trip_${tripId}`).emit('new_message', messageData);
+      
     } catch (error) {
       console.error('Error sending message:', error);
-      socket.emit('error', 'Failed to send message');
+      socket.emit('error', { message: 'Failed to send message', error: error.message });
     }
   });
 

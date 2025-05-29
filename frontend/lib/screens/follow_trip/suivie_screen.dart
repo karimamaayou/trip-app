@@ -56,25 +56,29 @@ class _TravelPageState extends State<TravelPage> {
         for (var trip in tripsData) {
           try {
             // Get participations for this trip
+            final participationUrl = 'http://localhost:3000/api/trips/${trip['id_voyage']}/participants';
+            print('Fetching participants from URL: $participationUrl');
+            
             final participationResponse = await http.get(
-              Uri.parse('http://localhost:3000/api/participations/trip/${trip['id_voyage']}'),
+              Uri.parse(participationUrl),
             );
             
             print('Participation Response for trip ${trip['id_voyage']}:');
+            print('URL used: $participationUrl');
             print('Status: ${participationResponse.statusCode}');
             print('Body: ${participationResponse.body}');
 
             if (participationResponse.statusCode == 200) {
-              final List<dynamic> participations = json.decode(participationResponse.body);
-              // Count only accepted participations
-              final acceptedCount = participations.where((p) => 
-                p['statut'] == 'accepte' && p['role'] == 'voyageur'
+              final List<dynamic> participants = json.decode(participationResponse.body);
+              // Count ALL accepted participants (both organisateur and voyageur)
+              final acceptedCount = participants.where((p) => 
+                p['statut'] == 'accepte'
               ).length;
               
               trip['current_members'] = acceptedCount;
               print('Trip ${trip['id_voyage']} - Total capacity: ${trip['capacite_max']}, Accepted members: $acceptedCount');
             } else {
-              print('Error fetching participations for trip ${trip['id_voyage']}: ${participationResponse.statusCode}');
+              print('Error fetching participants for trip ${trip['id_voyage']}: ${participationResponse.statusCode}');
               trip['current_members'] = 0;
             }
           } catch (e) {
@@ -86,7 +90,8 @@ class _TravelPageState extends State<TravelPage> {
         setState(() {
           currentTrips = tripsData.where((trip) {
             final returnDate = DateTime.parse(trip['date_retour'] ?? trip['date_depart']);
-            return returnDate.isAfter(now);
+            // Only include trips where user's status is 'accepte' and return date is in the future
+            return trip['statut'] == 'accepte' && returnDate.isAfter(now);
           }).map((trip) => {
             'id': trip['id_voyage'],
             'title': trip['titre'],
@@ -101,7 +106,8 @@ class _TravelPageState extends State<TravelPage> {
 
           pastTrips = tripsData.where((trip) {
             final returnDate = DateTime.parse(trip['date_retour'] ?? trip['date_depart']);
-            return returnDate.isBefore(now);
+            // Only include trips where user's status is 'accepte' and return date is in the past
+            return trip['statut'] == 'accepte' && returnDate.isBefore(now);
           }).map((trip) => {
             'id': trip['id_voyage'],
             'title': trip['titre'],
@@ -162,33 +168,27 @@ class _TravelPageState extends State<TravelPage> {
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Onglets
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: const Color.fromARGB(255, 226, 226, 226),
-                  width: 2,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.shade300,
-                    blurRadius: 6,
-                    offset: Offset(0, 2),
+            Center(
+              child: Container(
+                width: MediaQuery.of(context).size.width * 0.85,
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: Colors.grey.shade200,
+                      width: 1,
+                    ),
                   ),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(5.0),
+                ),
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    Expanded(child: _buildTabButton(0, 'Mes voyages')),
-                    Expanded(child: _buildTabButton(1, 'Voyage passé')),
+                    _buildTabButton(0, 'Mes voyages'),
+                    _buildTabButton(1, 'Voyage passé'),
                   ],
                 ),
               ),
@@ -539,29 +539,27 @@ class _TravelPageState extends State<TravelPage> {
   }
 
   Widget _buildTabButton(int index, String text) {
+    final isSelected = _selectedIndex == index;
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: () => setState(() => _selectedIndex = index),
         child: Container(
-          padding: EdgeInsets.symmetric(vertical: 14),
-          margin: EdgeInsets.all(4),
+          padding: EdgeInsets.symmetric(vertical: 12, horizontal: 12),
           decoration: BoxDecoration(
-            color: _selectedIndex == index ? primaryGreen : Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0xFFB0B0B0), width: 2),
-          ),
-          child: Center(
-            child: Text(
-              text,
-              style: TextStyle(
-                color:
-                    _selectedIndex == index
-                        ? Colors.white
-                        : const Color.fromARGB(255, 86, 86, 86),
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
+            border: Border(
+              bottom: BorderSide(
+                color: isSelected ? primaryGreen : Colors.transparent,
+                width: 2,
               ),
+            ),
+          ),
+          child: Text(
+            text,
+            style: TextStyle(
+              color: isSelected ? primaryGreen : Colors.grey.shade600,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              fontSize: 15,
             ),
           ),
         ),

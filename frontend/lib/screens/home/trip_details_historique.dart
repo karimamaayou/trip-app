@@ -8,6 +8,11 @@ import 'package:frontend/screens/home/info_conf_screen.dart';
 import 'package:frontend/screens/home/members_screen.dart';
 import 'package:frontend/screens/home/demande_envoyer_screen.dart';
 import 'package:frontend/models/user.dart';
+import 'package:frontend/screens/profile/member_profile_screen.dart';
+import 'package:frontend/screens/home/delete_trip_confirmation_screen.dart';
+import 'package:frontend/screens/chat/chat_screen.dart';
+import 'package:frontend/main_screen.dart';
+import 'package:frontend/screens/home/quit_confirmation_screen.dart';
 
 class TripDetailsHistorique extends StatefulWidget {
   final int tripId;
@@ -19,18 +24,44 @@ class TripDetailsHistorique extends StatefulWidget {
   _TripDetailsPageState createState() => _TripDetailsPageState();
 }
 
-class _TripDetailsPageState extends State<TripDetailsHistorique> {
+class _TripDetailsPageState extends State<TripDetailsHistorique> with WidgetsBindingObserver {
   final PageController _controller = PageController();
   int _currentPage = 0;
   Map<String, dynamic>? tripData;
   bool isLoading = true;
   bool isSendingRequest = false;
   String? userParticipationStatus;
+  String? currentUserRole;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _fetchTripDetails();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _fetchTripDetails();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh trip details when screen becomes active
+    final route = ModalRoute.of(context);
+    if (route != null && route.isCurrent) {
+      _fetchTripDetails();
+    }
   }
 
   Future<void> _fetchTripDetails() async {
@@ -40,18 +71,34 @@ class _TripDetailsPageState extends State<TripDetailsHistorique> {
       );
 
       if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print('Trip details response: $data'); // Debug print
+        
+        // Store the previous navigation state
+        final previousRoute = ModalRoute.of(context);
+        
         setState(() {
-          tripData = json.decode(response.body);
+          tripData = data;
           // Check if current user is in participants list
           final participants = tripData!['participants'] as List;
           final currentUserId = int.parse(User.getUserId() ?? '0');
+          print('Current user ID: $currentUserId'); // Debug print
+          print('Participants: $participants'); // Debug print
           final userParticipation = participants.firstWhere(
             (p) => p['id_voyageur'] == currentUserId,
             orElse: () => null,
           );
           userParticipationStatus = userParticipation?['statut'];
+          currentUserRole = userParticipation?['role'];
           isLoading = false;
         });
+
+        // If user is no longer a participant (not the organizer), pop to chat screen
+        if (userParticipationStatus == null && currentUserRole != 'organisateur') {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.of(context).pop();
+          });
+        }
       }
     } catch (e) {
       print('Error fetching trip details: $e');
@@ -92,11 +139,16 @@ class _TripDetailsPageState extends State<TripDetailsHistorique> {
   }
 
   Widget _buildActionButton() {
+    // Determine if the current user is the organizer
+    final isOrganizer = currentUserRole == 'organisateur';
+
     return SizedBox(
       width: double.infinity,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // Show "Consulter les demandes" button only if the user is an organisateur
+          if (isOrganizer)
           SizedBox(
             width: double.infinity,
             height: 50,
@@ -123,34 +175,55 @@ class _TripDetailsPageState extends State<TripDetailsHistorique> {
               ),
             ),
           ),
+          // Add a SizedBox for spacing only if the demande button is visible
+          if (isOrganizer)
           const SizedBox(height: 12),
+
+          // Show "Supprimer voyage" for organizer, "Quitter le voyage" for others
           SizedBox(
             width: double.infinity,
             height: 50,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 241, 66, 2),
+                backgroundColor: isOrganizer ? const Color(0xFFE45517) : const Color.fromARGB(255, 241, 66, 2), // Red for delete, Orange for quit
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder:
-                        (_) => ExclusionVoyage(
-                          memberName: '',
-                          tripId: widget.tripId,
+              onPressed: isOrganizer
+                  ? () async { // Made onPressed async to await result
+                      // Organizer's delete action
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => DeleteTripConfirmationScreen(
+                            tripId: widget.tripId,
+                            tripTitle: tripData!['0']['titre'], // Pass trip title to confirmation screen
+                          ),
                         ),
-                  ),
-                ).then((_) {
-                  _fetchTripDetails();
-                });
-              },
-              child: const Text(
-                'Quitter le voyage',
-                style: TextStyle(fontSize: 20, color: Colors.white),
+                      );
+                      // If result is true, it means the trip was deleted, so pop this screen
+                      if (result == true) {
+                         Navigator.of(context).pop(true); // Pop TripDetailsHistorique with true
+                      }
+                    }
+                  : () async { // Made onPressed async for non-organizer's quit action
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => QuitConfirmationScreen(
+                            tripId: widget.tripId,
+                          ),
+                        ),
+                      );
+                      // If result is true, it means the user quit, so pop this screen
+                      if (result == true) {
+                        Navigator.of(context).pop(true);
+                      }
+                    },
+              child: Text(
+                isOrganizer ? 'Supprimer voyage' : 'Quitter le voyage', // Button text changes based on role
+                style: const TextStyle(fontSize: 20, color: Colors.white),
               ),
             ),
           ),
@@ -253,7 +326,15 @@ class _TripDetailsPageState extends State<TripDetailsHistorique> {
                     backgroundColor: Colors.white,
                     child: IconButton(
                       icon: const Icon(Icons.arrow_back),
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () {
+                        // Always return to chat screen by replacing the current screen
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ChatScreen(tripId: widget.tripId),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -334,19 +415,24 @@ class _TripDetailsPageState extends State<TripDetailsHistorique> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        "Membre (${participants.length}/${trip['capacite_max']})",
+                        "Membre (${participants.where((p) => p['statut'] == 'accepte').length}/${trip['capacite_max']})",
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       GestureDetector(
-                        onTap: () {
-                          Navigator.push(
+                        onTap: () async {
+                          final result = await Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) => MembersScreen(
                                 tripId: widget.tripId,
+                                currentUserRole: currentUserRole,
                               ),
                             ),
                           );
+                          // If a member was added or removed, refresh trip details
+                          if (result == true) {
+                            _fetchTripDetails();
+                          }
                         },
                         child: const Text(
                           "Voir tout",
@@ -357,24 +443,48 @@ class _TripDetailsPageState extends State<TripDetailsHistorique> {
                   ),
                   const SizedBox(height: 12),
                   Column(
-                    children:
-                        participants.map<Widget>((member) {
-                          return _memberCard(
-                            '${member['prenom']} ${member['nom']}',
-                            member['role'],
+                    children: participants
+                        .where((member) => member['statut'] == 'accepte') // Filter only accepted members
+                        .take(4) // Only show first 4 members
+                        .map<Widget>((member) {
+                      final currentUserId = int.parse(User.getUserId() ?? '0');
+                      final isCurrentUser = member['id_voyageur'] == currentUserId;
+                      
+                      return GestureDetector(
+                        onTap: isCurrentUser ? null : () async {
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => MemberProfileScreen(
+                                memberId: member['id_voyageur'],
+                                memberName: '${member['prenom']} ${member['nom']}',
+                                memberPhoto: member['photo_profil'] ?? '',
+                                currentUserRole: currentUserRole,
+                                tripId: widget.tripId,
+                              ),
+                            ),
+                          );
+                          // If a member was removed, refresh trip details
+                          if (result == true) {
+                            _fetchTripDetails();
+                          }
+                        },
+                        child: _memberCard(
+                          '${member['id_voyageur']}_${member['prenom']} ${member['nom']}',
+                          member['role'] ?? 'Voyageur',
                             'http://localhost:3000${member['photo_profil']}',
+                        ),
                           );
                         }).toList(),
                   ),
+                  const SizedBox(height: 24),
+                  _buildActionButton(),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),
           ],
         ),
-      ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: _buildActionButton(),
       ),
     );
   }
@@ -384,6 +494,13 @@ class _TripDetailsPageState extends State<TripDetailsHistorique> {
   }
 
   static Widget _memberCard(String name, String role, String imagePath) {
+    // Extract member ID from the name (format: "id_name")
+    final parts = name.split('_');
+    final memberId = int.tryParse(parts[0]);
+    final displayName = parts.skip(1).join('_');
+    final currentUserId = int.parse(User.getUserId() ?? '0');
+    final isCurrentUser = memberId == currentUserId;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
@@ -396,13 +513,20 @@ class _TripDetailsPageState extends State<TripDetailsHistorique> {
         children: [
           CircleAvatar(radius: 24, backgroundImage: NetworkImage(imagePath)),
           const SizedBox(width: 12),
-          Column(
+          Expanded(
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(
+                  isCurrentUser ? '$displayName (Vous)' : displayName,
+                  style: const TextStyle(fontWeight: FontWeight.bold)
+                ),
               Text(role, style: const TextStyle(color: Colors.grey)),
             ],
+            ),
           ),
+          if (!isCurrentUser) // Only show arrow for other members
+            const Icon(Icons.chevron_right, color: Colors.grey),
         ],
       ),
     );
