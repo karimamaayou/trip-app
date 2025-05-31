@@ -1,5 +1,6 @@
 const map = require('../models/map');
 const db = require('../config/db');
+
 const getAllVoyages = async (req, res) => {
   try {
     const voyages = await map.getAllVoyages();
