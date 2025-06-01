@@ -214,8 +214,19 @@ const tripController = {
                 id_ville_depart,
                 id_ville_destination,
                 userId,
-                activites // Changed from destructuring to get activities directly
+                activites ,// Changed from destructuring to get activities directly
+                 latitude,
+                longitude
             } = req.body;
+              // Debug log for coordinates
+            console.log('Coordinates received:', {
+                latitude,
+                longitude,
+                type: {
+                    latitude: typeof latitude,
+                    longitude: typeof longitude
+                }
+            });
 
             // Get activities from request body and ensure they are integers
             let parsedActivities = [];
@@ -236,9 +247,10 @@ const tripController = {
                 const [result] = await connection.query(
                     `INSERT INTO voyages (
                         titre, description, date_depart, date_retour,
-                        capacite_max, id_ville_depart, id_ville_destination, budget
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-                    [titre, description, date_depart, date_retour, capacite_max, id_ville_depart, id_ville_destination, req.body.budget]
+                        capacite_max, id_ville_depart, id_ville_destination, budget,latitude, longitude
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [titre, description, date_depart, date_retour, capacite_max, id_ville_depart, id_ville_destination, req.body.budget, req.body.latitude,
+                        req.body.longitude]
                 );
 
                 const tripId = result.insertId;

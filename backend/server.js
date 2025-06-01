@@ -38,8 +38,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/data', dataRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/voyages', mapRoutes);
-app.use('/api/location', locationRoutes);
-
+app.use('/api/map', locationRoutes);
+// JAWB
 // Socket.IO setup with CORS
 const io = new Server(server, {
   cors: {
