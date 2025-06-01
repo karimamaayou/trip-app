@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>NextTrip Admin - Gestion des Utilisateurs</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="users.css" />
+    <link rel="stylesheet" href="dashboard.css" />
+    <style>
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 999;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.4);
+        justify-content: center;
+        align-items: center;
+      }
+      .modal-content {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+        width: 400px;
+        margin: auto;
+      }
+      .modal-buttons {
+        margin-top: 20px;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+      }
+      .danger-btn {
+        background-color: red;
+        color: white;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      .cancel-btn {
+        background-color: gray;
+        color: white;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2>NextTrip Admin</h2>
+      </div>
+      <div class="sidebar-menu">
+        <a href="dashboard.html" class="menu-item">
+          <i class="fas fa-chart-line"></i> Tableau de bord
+        </a>
+        <a href="users.html" class="menu-item active">
+          <i class="fas fa-users"></i> Utilisateurs
+        </a>
+        <a href="groupes.html" class="menu-item">
+          <i class="fas fa-users-cog"></i> Groupes de trips
+        </a>
+        <a href="cities.html" class="menu-item">
+          <i class="fas fa-city"></i> Villes
+        </a>
+        <a href="activities.html" class="menu-item">
+          <i class="fas fa-city"></i> activities
+        </a>
+        <a href="login.html" class="menu-item">
+          <i class="fas fa-sign-out-alt"></i> Déconnexion
+        </a>
+      </div>
+    </div>
+
+    <div class="main-content">
+      <div class="page-header">
+        <h1>Gestion des Utilisateurs</h1>
+      </div>
+
+      <div class="card">
+        <div class="filters">
+          <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input
+              type="text"
+              class="search-input"
+              placeholder="Rechercher un utilisateur..."
+            />
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="users-table">
+            <thead>
+              <tr>
+                <th>Nom</th>
+                <th>Prénom</th>
+                <th>Email</th>
+                <th>Date d'inscription</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="user-table-body">
+              <!-- Les utilisateurs seront ajoutés ici dynamiquement -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de confirmation pour le blocage -->
+    <div id="block-modal" class="modal">
+      <div class="modal-content">
+        <h3><i class="fas fa-exclamation-triangle"></i> Confirmation de blocage</h3>
+        <p>Êtes-vous sûr de vouloir bloquer cet utilisateur ?</p>
+        <div class="modal-buttons">
+          <button id="confirm-block" class="danger-btn">Oui, bloquer</button>
+          <button id="cancel-block" class="cancel-btn">Non, annuler</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let selectedUserId = null;
+
+      // Fonction pour afficher le modal
+      function openBlockModal(id) {
+        selectedUserId = id;
+        document.getElementById("block-modal").style.display = "flex";
+      }
+
+      // Fonction pour fermer le modal
+      function closeBlockModal() {
+        selectedUserId = null;
+        document.getElementById("block-modal").style.display = "none";
+      }
+
+      // Fonction pour bloquer l'utilisateur
+      async function blockUser() {
+        if (!selectedUserId) return;
+
+        try {
+          const response = await fetch("http://localhost:3000/api/dashboard/Caution", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ id_utilisateur: selectedUserId }),
+          });
+
+          const data = await response.json();
+          if (data.success) {
+            alert("Utilisateur bloqué avec succès !");
+            fetchUsers();
+          } else {
+            alert("Erreur lors du blocage !");
+          }
+        } catch (error) {
+          console.error("Erreur API:", error);
+          alert("Erreur de réseau.");
+        }
+
+        closeBlockModal();
+      }
+
+      // Attacher les événements
+      document.getElementById("confirm-block").addEventListener("click", blockUser);
+      document.getElementById("cancel-block").addEventListener("click", closeBlockModal);
+
+      // Rechercher un utilisateur
+      document.querySelector(".search-input").addEventListener("input", function (e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const rows = document.querySelectorAll(".users-table tbody tr");
+
+        rows.forEach((row) => {
+          const text = row.textContent.toLowerCase();
+          row.style.display = text.includes(searchTerm) ? "" : "none";
+        });
+      });
+
+      // Récupération des utilisateurs
+      async function fetchUsers() {
+        try {
+          const response = await fetch("http://localhost:3000/api/dashboard/voyageurs");
+          const data = await response.json();
+
+          const tbody = document.getElementById("user-table-body");
+          tbody.innerHTML = "";
+
+        data.forEach((user) => {
+  console.log("Utilisateur:", user); // 🔍 inspecte chaque utilisateur
+
+  const date = new Date(user.date_inscription).toLocaleDateString("fr-FR");
+
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td>${user.nom}</td>
+    <td>${user.prenom}</td>
+    <td>${user.email}</td>
+    <td>${date}</td>
+    <td>
+      <button onclick="openBlockModal('${user.id_utilisateur}')" class="block-btn">
+        <i class="fas fa-ban"></i> Bloquer
+      </button>
+    </td>
+  `;
+  tbody.appendChild(tr);
+});
+
+        } catch (error) {
+          console.error("Erreur lors du chargement des utilisateurs:", error);
+        }
+      }
+
+      // Lancer au chargement
+      window.addEventListener("DOMContentLoaded", fetchUsers);
+    </script>
+  </body>
+</html>

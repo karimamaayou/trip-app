@@ -1,0 +1,154 @@
+  * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Roboto", sans-serif;
+      }
+
+      body {
+        display: flex;
+        min-height: 100vh;
+      }
+
+      .sidebar {
+        width: 250px;
+        background-color: #24a500;
+        color: white;
+        padding: 1rem;
+      }
+
+      .sidebar-header {
+        padding: 1rem 0;
+        text-align: center;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+  
+    
+
+
+      .main-content {
+        flex: 1;
+        padding: 2rem;
+        background-color: #f5f5f5;
+      }
+
+      .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+      }
+
+      .search-bar {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+      }
+
+      .search-input {
+        flex: 1;
+        padding: 0.8rem;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+      }
+
+      .filter-select {
+        padding: 0.8rem;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        background-color: white;
+        min-width: 200px;
+      }
+
+      .travelers-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .traveler-card {
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+
+      .traveler-header {
+        padding: 1.5rem;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .traveler-title {
+        color: #333;
+      }
+
+      .traveler-meta {
+        color: #666;
+        font-size: 0.9rem;
+      }
+
+      .traveler-content {
+        padding: 1.5rem;
+      }
+
+      .traveler-info {
+        margin-bottom: 1rem;
+      }
+
+      .traveler-info p {
+        margin-bottom: 0.5rem;
+        color: #666;
+      }
+
+      .traveler-info strong {
+        color: #333;
+      }
+
+      .traveler-actions {
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .action-button {
+        flex: 1;
+        padding: 0.8rem;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+      }
+
+      .view-button {
+        background-color: #24a500;
+        color: white;
+      }
+
+      .remove-button {
+        background-color: #dc3545;
+        color: white;
+      }
+
+      .status-badge {
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+      }
+
+      .status-active {
+        background-color: #e8f5e9;
+        color: #24a500;
+      }
+
+      .status-pending {
+        background-color: #fff3e0;
+        color: #f57c00;
+      }

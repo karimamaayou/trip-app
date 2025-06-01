@@ -1,0 +1,334 @@
+    .cities-container {
+        padding: 20px;
+        animation: fadeIn 0.5s ease-in;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .add-city-form {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+      }
+
+      .add-city-form:hover {
+        transform: translateY(-5px);
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #333;
+      }
+
+      .form-group input {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        transition: border-color 0.3s ease;
+        font-size: 16px;
+      }
+
+      .form-group input:focus {
+        border-color: #24a500;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(36, 165, 0, 0.1);
+      }
+
+      .btn-add {
+        background-color: #24a500;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn-add:hover {
+        background-color: #1d8500;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(36, 165, 0, 0.2);
+      }
+
+      .cities-table {
+        width: 100%;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border-collapse: separate;
+        border-spacing: 0;
+        overflow: hidden;
+      }
+
+      .cities-table th,
+      .cities-table td {
+        padding: 16px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+      }
+
+      .cities-table th {
+        background-color: #f8f9fa;
+        font-weight: 500;
+        color: #333;
+      }
+
+      .cities-table tr {
+        transition: background-color 0.3s ease;
+      }
+
+      .cities-table tr:hover {
+        background-color: #f8f9fa;
+      }
+
+      .btn-delete {
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .btn-delete:hover {
+        background-color: #c82333;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.2);
+      }
+
+      .alert {
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        animation: slideIn 0.5s ease;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      @keyframes slideIn {
+        from {
+          transform: translateX(-100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+
+      .success-alert {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+
+      .error-alert {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+
+      .search-box {
+        margin-bottom: 20px;
+        position: relative;
+      }
+
+      .search-box input {
+        width: 100%;
+        padding: 12px 20px;
+        padding-left: 40px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: all 0.3s ease;
+      }
+
+      .search-box input:focus {
+        border-color: #24a500;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(36, 165, 0, 0.1);
+      }
+
+      .search-box i {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #666;
+      }
+
+      .loading-spinner {
+        display: none;
+        text-align: center;
+        padding: 20px;
+      }
+
+      .loading-spinner.active {
+        display: block;
+        animation: spin 1s linear infinite;
+      }
+      .btn-add-city {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  font-size: 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.3s ease;
+}
+
+.btn-add-city:hover {
+  background-color: #0056b3;
+}
+
+/* Formulaire d'ajout de ville */
+.add-city-form {
+  margin-top: 20px;
+  padding: 15px 20px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  display: none; /* caché par défaut, affiché via JS */
+  max-width: 400px;
+}
+
+.add-city-form h3 {
+  margin-bottom: 15px;
+  color: #343a40;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.form-group {
+  margin-bottom: 12px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  color: #495057;
+}
+
+.form-group input[type="text"] {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 14px;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
+}
+
+.form-group input[type="text"]:focus {
+  border-color: #007bff;
+  outline: none;
+}
+
+/* Boutons dans le formulaire */
+.btn-submit {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.3s ease;
+}
+
+.btn-submit:hover {
+  background-color: #1e7e34;
+}
+
+.btn-delete {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.3s ease;
+}
+
+.btn-delete:hover {
+  background-color: #bd2130;
+}
+
+/* Alertes */
+.alert {
+  margin-top: 20px;
+  padding: 12px 18px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+  font-size: 15px;
+}
+
+.success-alert {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.error-alert {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+/* Spinner */
+.loading-spinner {
+  display: none;
+  text-align: center;
+  margin: 20px 0;
+  color: #007bff;
+}
+
+.loading-spinner.active {
+  display: block;
+}

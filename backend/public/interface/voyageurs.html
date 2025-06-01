@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NextTrip Admin - Voyageurs</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="voyageurs.css">
+  </head>
+  <body>
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2>NextTrip Admin</h2>
+      </div>
+      <div class="sidebar-menu">
+        <a href="dashboard.html" class="menu-item">
+          <i class="fas fa-chart-line"></i>
+          Tableau de bord
+        </a>
+        <a href="users.html" class="menu-item">
+          <i class="fas fa-users"></i>
+          Utilisateurs
+        </a>
+        <a href="voyageurs.html" class="menu-item">
+          <i class="fas fa-user-friends"></i>
+          Voyageurs
+        </a>
+        <a href="groupes.html" class="menu-item">
+          <i class="fas fa-users-cog"></i>
+          Groupes de trips
+        </a>
+          <a href="cities.html" class="menu-item">
+          <i class="fas fa-city"></i>
+          Villes
+        </a>
+          <a href="activities.html" class="menu-item ">
+          <i class="fas fa-city"></i>
+          activities
+        </a>
+        <a href="login.html" class="menu-item">
+          <i class="fas fa-sign-out-alt"></i>
+          Déconnexion
+        </a>
+      </div>
+    </div>
+
+    <div class="main-content">
+      <div class="page-header">
+        <h1>Voyageurs</h1>
+      </div>
+
+      <div class="search-bar">
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Rechercher un voyageur..."
+        />
+        <select class="filter-select" title="Filtrer par groupe">
+          <option value="all">Tous les groupes</option>
+          <option value="paris">Voyage à Paris</option>
+          <option value="londres">Week-end à Londres</option>
+        </select>
+      </div>
+
+      <div class="travelers-list">
+        <!-- Voyageur 1 -->
+        <div class="traveler-card">
+          <div class="traveler-header">
+            <div>
+              <h3 class="traveler-title">Jean Dupont</h3>
+              <div class="traveler-meta">
+                <span class="status-badge status-active">Actif</span> • Voyage à
+                Paris
+              </div>
+            </div>
+          </div>
+          <div class="traveler-content">
+            <div class="traveler-info">
+              <p><strong>Email:</strong> jean.dupont@email.com</p>
+              <p><strong>Date d'inscription:</strong> 01/01/2024</p>
+              <p>
+                <strong>Dates de participation:</strong> 15/03/2024 - 20/03/2024
+              </p>
+              <p><strong>Rôle:</strong> Participant</p>
+            </div>
+            <div class="traveler-actions">
+              <button class="action-button view-button">
+                <i class="fas fa-eye"></i> Voir détails
+              </button>
+              <button class="action-button remove-button">
+                <i class="fas fa-user-minus"></i> Retirer du voyage
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Voyageur 2 -->
+        <div class="traveler-card">
+          <div class="traveler-header">
+            <div>
+              <h3 class="traveler-title">Marie Martin</h3>
+              <div class="traveler-meta">
+                <span class="status-badge status-pending">En attente</span> •
+                Week-end à Londres
+              </div>
+            </div>
+          </div>
+          <div class="traveler-content">
+            <div class="traveler-info">
+              <p><strong>Email:</strong> marie.martin@email.com</p>
+              <p><strong>Date d'inscription:</strong> 15/01/2024</p>
+              <p>
+                <strong>Dates de participation:</strong> 01/04/2024 - 03/04/2024
+              </p>
+              <p><strong>Rôle:</strong> Participant</p>
+            </div>
+            <div class="traveler-actions">
+              <button class="action-button view-button">
+                <i class="fas fa-eye"></i> Voir détails
+              </button>
+              <button class="action-button remove-button">
+                <i class="fas fa-user-minus"></i> Retirer du voyage
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Fonction de recherche
+      document
+        .querySelector(".search-input")
+        .addEventListener("input", function (e) {
+          const searchTerm = e.target.value.toLowerCase();
+          const cards = document.querySelectorAll(".traveler-card");
+
+          cards.forEach((card) => {
+            const text = card.textContent.toLowerCase();
+            card.style.display = text.includes(searchTerm) ? "" : "none";
+          });
+        });
+
+      // Gestion du filtre par groupe
+      document
+        .querySelector(".filter-select")
+        .addEventListener("change", function (e) {
+          const selectedGroup = e.target.value;
+          const cards = document.querySelectorAll(".traveler-card");
+
+          cards.forEach((card) => {
+            const groupText = card
+              .querySelector(".traveler-meta")
+              .textContent.toLowerCase();
+            card.style.display =
+              selectedGroup === "all" || groupText.includes(selectedGroup)
+                ? ""
+                : "none";
+          });
+        });
+
+      // Gestion des actions
+      document.querySelectorAll(".action-button").forEach((button) => {
+        button.addEventListener("click", function () {
+          const action = this.classList.contains("remove-button")
+            ? "retirer"
+            : "voir";
+          const card = this.closest(".traveler-card");
+          const travelerName =
+            card.querySelector(".traveler-title").textContent;
+
+          if (action === "retirer") {
+            if (
+              confirm(
+                `Êtes-vous sûr de vouloir retirer ${travelerName} du voyage ?`
+              )
+            ) {
+              // Ici, vous pouvez ajouter la logique pour retirer le voyageur
+              console.log(`Retrait de ${travelerName} du voyage`);
+            }
+          } else {
+            // Ici, vous pouvez ajouter la logique pour voir les détails du voyageur
+            console.log(`Affichage des détails de ${travelerName}`);
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

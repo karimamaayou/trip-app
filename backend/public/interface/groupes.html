@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NextTrip Admin - Gestion des Groupes de Voyages</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="groupes.css" />
+    <link rel="stylesheet" href="dashboard.css" />
+  </head>
+  <body>
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2>NextTrip Admin</h2>
+      </div>
+      <div class="sidebar-menu">
+        <a href="dashboard.html" class="menu-item">
+          <i class="fas fa-chart-line"></i>
+          Tableau de bord
+        </a>
+        <a href="users.html" class="menu-item">
+          <i class="fas fa-users"></i>
+          Utilisateurs
+        </a>
+        <a href="groupes.html" class="menu-item active">
+          <i class="fas fa-users-cog"></i>
+          Groupes de trips
+        </a>
+        <a href="cities.html" class="menu-item">
+          <i class="fas fa-city"></i>
+          Villes
+        </a>
+        <a href="activities.html" class="menu-item">
+          <i class="fas fa-city"></i>
+          Activities
+        </a>
+        <a href="login.html" class="menu-item">
+          <i class="fas fa-sign-out-alt"></i>
+          Déconnexion
+        </a>
+      </div>
+    </div>
+
+    <div class="main-content">
+      <div class="page-header">
+        <h1>Gestion des Groupes de Voyages</h1>
+      </div>
+
+      <div class="card">
+        <div class="filters">
+          <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input
+              type="text"
+              id="searchGroup"
+              placeholder="Rechercher un groupe..."
+            />
+          </div>
+          <select id="cityFilter" class="form-control">
+            <option value="">Toutes les villes</option>
+          </select>
+        </div>
+
+        <div class="groups-grid" id="groups-grid">
+          <!-- Groupes dynamiques -->
+        </div>
+
+        <div class="pagination">
+          <button class="btn" id="prevPage" disabled>
+            <i class="fas fa-chevron-left"></i> Précédent
+          </button>
+          <span id="pageInfo">Page 1 sur 1</span>
+          <button class="btn" id="nextPage" disabled>
+            Suivant <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal ajout/modif groupe -->
+    <div id="groupModal" class="modal" style="display: none">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="modalTitle">Créer un nouveau groupe</h2>
+          <button class="close-btn" onclick="closeGroupModal()">&times;</button>
+        </div>
+        <form id="groupForm">
+          <div class="form-group">
+            <label for="groupName">Nom du groupe</label>
+            <input type="text" id="groupName" class="form-control" required />
+          </div>
+          <div class="form-group">
+            <label for="groupCity">Ville</label>
+            <select id="groupCity" class="form-control" required>
+              <!-- Villes dynamiques -->
+            </select>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal détails groupe -->
+    <div id="groupDetailsModal" class="modal" style="display: none">
+      <div class="modal-content modal-lg">
+        <div class="modal-header">
+          <h2 id="groupDetailsTitle">Détails du groupe</h2>
+          <button class="close-btn" onclick="closeGroupDetailsModal()">
+            &times;
+          </button>
+        </div>
+        <div class="group-details">
+          <div class="group-info">
+            <h3>Informations générales</h3>
+            <div id="groupInfoContent"></div>
+          </div>
+          <div class="group-members">
+            <h3>Membres du groupe</h3>
+            <div class="table-container"></div>
+          </div>
+          <div class="group-trips">
+            <h3>Voyages planifiés</h3>
+            <div class="table-container">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Destination</th>
+                    <th>Participants</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="groupTripsList">
+                  <!-- Voyages dynamiques -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let allGroups = [];
+
+      async function loadGroups() {
+        try {
+          const response = await fetch(
+            "http://localhost:3000/api/dashboard/groupesVoyageurs"
+          );
+          allGroups = await response.json();
+          displayGroups(allGroups);
+        } catch (error) {
+          console.error("Erreur lors du chargement des groupes:", error);
+        }
+      }
+
+      function displayGroups(groups) {
+        const groupsGrid = document.getElementById("groups-grid");
+        groupsGrid.innerHTML = "";
+
+        if (groups.length === 0) {
+          groupsGrid.innerHTML = "<p>Aucun groupe trouvé.</p>";
+          return;
+        }
+
+        groups.forEach((voyage) => {
+          const groupCard = document.createElement("div");
+          groupCard.classList.add("group-card");
+
+          let status = "active";
+          if (voyage.voyageurs.length >= voyage.membres_max) {
+            status = "full";
+          } else if (!voyage.actif) {
+            status = "inactive";
+          }
+
+          groupCard.innerHTML = `
+            <div class="group-header" data-status="${status}">
+              <h3>${voyage.titre}</h3>
+              <div class="group-destination">${voyage.ville_depart} → ${
+            voyage.ville_destination
+          }</div>
+            </div>
+            <div class="group-content">
+              <div class="group-info">
+                <p><strong>Description:</strong> ${voyage.description}</p>
+                <p><strong>Budget:</strong> ${voyage.budget} MAD</p>
+                <p><strong>Date départ:</strong> ${new Date(
+                  voyage.date_depart
+                ).toLocaleDateString()}</p>
+                <p><strong>Date retour:</strong> ${new Date(
+                  voyage.date_retour
+                ).toLocaleDateString()}</p>
+              </div>
+              <div class="group-members">
+                <select class="form-control">
+                  <option disabled selected>Membres du groupe</option>
+                  ${voyage.voyageurs
+                    .map(
+                      (v) =>
+                        `<option>${v.nom} ${v.prenom} - ${v.role}</option>`
+                    )
+                    .join("")}
+                </select>
+              </div>
+            </div>
+          `;
+          groupsGrid.appendChild(groupCard);
+        });
+      }
+
+      function setupSearch() {
+        const searchInput = document.getElementById("searchGroup");
+        searchInput.addEventListener("input", () => {
+          const searchTerm = searchInput.value.toLowerCase();
+          const filtered = allGroups.filter((group) => {
+            return (
+              group.titre.toLowerCase().includes(searchTerm) ||
+              group.ville_depart.toLowerCase().includes(searchTerm) ||
+              group.ville_destination.toLowerCase().includes(searchTerm) ||
+              group.description.toLowerCase().includes(searchTerm)
+            );
+          });
+          displayGroups(filtered);
+        });
+      }
+
+      async function loadVilles() {
+        try {
+          const response = await fetch(
+            "http://localhost:3000/api/dashboard/villes"
+          );
+          const villes = await response.json();
+          const cityFilter = document.getElementById("cityFilter");
+          const groupCity = document.getElementById("groupCity");
+
+          cityFilter.innerHTML = `<option value="">Toutes les villes</option>`;
+          groupCity.innerHTML = `<option value="" disabled selected>Choisissez une ville</option>`;
+
+          const seen = new Set();
+          villes.forEach((ville) => {
+            if (!seen.has(ville.nom_ville)) {
+              seen.add(ville.nom_ville);
+
+              const option1 = document.createElement("option");
+              option1.value = ville.nom_ville;
+              option1.textContent = ville.nom_ville;
+              cityFilter.appendChild(option1);
+
+              const option2 = document.createElement("option");
+              option2.value = ville.id_ville;
+              option2.textContent = ville.nom_ville;
+              groupCity.appendChild(option2);
+            }
+          });
+
+          cityFilter.addEventListener("change", () => {
+            const searchTerm = document
+              .getElementById("searchGroup")
+              .value.toLowerCase();
+            const selectedCity = cityFilter.value;
+
+            const filtered = allGroups.filter((group) => {
+              const matchesSearch =
+                group.titre.toLowerCase().includes(searchTerm) ||
+                group.ville_depart.toLowerCase().includes(searchTerm) ||
+                group.ville_destination.toLowerCase().includes(searchTerm) ||
+                group.description.toLowerCase().includes(searchTerm);
+
+              const matchesCity =
+                !selectedCity ||
+                group.ville_depart === selectedCity ||
+                group.ville_destination === selectedCity;
+
+              return matchesSearch && matchesCity;
+            });
+
+            displayGroups(filtered);
+          });
+        } catch (error) {
+          console.error("Erreur lors du chargement des villes:", error);
+        }
+      }
+
+      window.addEventListener("DOMContentLoaded", () => {
+        loadGroups();
+        loadVilles();
+        setupSearch();
+      });
+    </script>
+  </body>
+</html>
