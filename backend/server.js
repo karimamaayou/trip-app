@@ -40,7 +40,6 @@ app.use('/api/posts', postRoutes);
 app.use('/api/voyages', mapRoutes);
 app.use('/api/map', locationRoutes);
 
-// Socket.IO setup with CORS
 const io = new Server(server, {
   cors: {
     origin: "*",  // Allow all origins for development
