@@ -28,7 +28,7 @@ const postRoutes = require("./routes/post");
 const mapRoutes = require("./routes/map");
 const locationRoutes = require("./routes/location");
 const userRoutes = require("./routes/users");
-const profileVoyegeurRoutes = require("./routes/profileVoyegeurRoutes");
+
 
 const dashbordRoutes = require("./routes/dashbordRoutes");
 
@@ -37,20 +37,16 @@ const dashbordRoutes = require("./routes/dashbordRoutes");
 const dashbordServer = require("./routes/dashbordServer");
 app.use("/api/dashbord", dashbordServer); 
 // API Routes
-app.use("/api/auth", authRoutes); 
-app.use("/api/trips", tripRoutes);
-app.use("/api/profile", profileRoutes);
-app.use("/api/friends", friendsRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/data", dataRoutes);
-app.use("/api/posts", postRoutes);
-app.use("/api/voyages", mapRoutes);
-app.use("/api/location", locationRoutes);
-app.use("/api", profileVoyegeurRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/trips', tripRoutes);
+app.use('/api/profile', profileRoutes);
+app.use('/api/friends', friendsRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/data', dataRoutes);
+app.use('/api/posts', postRoutes);
+app.use('/api/voyages', mapRoutes);
+app.use('/api/map', locationRoutes);
 app.use("/api/dashboard", dashbordRoutes);
-
-
-// Socket.IO setup with CORS
 const io = new Server(server, {
   cors: {
     origin: "*", // Allow all origins for development

@@ -95,11 +95,16 @@ class _AddImageScreenState extends State<AddImageScreen> {
 
       // Add trip data
       final tripData = widget.formData[0];
-      
+
       // Debug print to check form data
       print('Form data: $tripData');
-      
+      // Debug print to check coordinates
+      print('Coordinates before request:');
+      print('Latitude: ${tripData['latitude_depart']}');
+      print('Longitude: ${tripData['longitude_depart']}');
+
       request.fields.addAll({
+        // Ajouter les coordonnées de position
         'titre': tripData['titre'],
         'description': tripData['description'],
         'date_depart': tripData['date_depart'].toString(),
@@ -109,11 +114,20 @@ class _AddImageScreenState extends State<AddImageScreen> {
         'id_ville_destination': tripData['ville_arrivee'].toString(),
         'budget': tripData['budget'].toString(),
         'userId': User.getUserId() ?? '1',
+
+        'latitude': tripData['latitude_depart'].toString(),
+        'longitude': tripData['longitude_depart'].toString(),
       });
+
+      // Debug print to check form data
+      print('Form data: $tripData');
+      print('Position data:');
+      print('Latitude: ${tripData['latitude_depart']}');
+      print('Longitude: ${tripData['longitude_depart']}');
 
       // Add activities
       if (tripData['activites'] != null) {
-      final activities = tripData['activites'] as List;
+        final activities = tripData['activites'] as List;
         if (activities.isNotEmpty) {
           request.fields['activites'] = activities.join(',');
         }
@@ -163,9 +177,9 @@ class _AddImageScreenState extends State<AddImageScreen> {
       }
     } catch (e) {
       print('Error creating trip: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error creating trip: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error creating trip: $e')));
     } finally {
       setState(() {
         _isLoading = false;
@@ -210,12 +224,18 @@ class _AddImageScreenState extends State<AddImageScreen> {
                           Container(
                             height: 200,
                             margin: const EdgeInsets.only(bottom: 10),
-                            child: kIsWeb
-                                ? Image.memory(img as Uint8List,
-                                    fit: BoxFit.cover, width: double.infinity)
-                                : Image.file(File((img as XFile).path),
-                                    fit: BoxFit.cover,
-                                    width: double.infinity),
+                            child:
+                                kIsWeb
+                                    ? Image.memory(
+                                      img as Uint8List,
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                    )
+                                    : Image.file(
+                                      File((img as XFile).path),
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                    ),
                           ),
                           Positioned(
                             top: 5,
@@ -228,8 +248,11 @@ class _AddImageScreenState extends State<AddImageScreen> {
                                   shape: BoxShape.circle,
                                 ),
                                 padding: const EdgeInsets.all(2),
-                                child: const Icon(Icons.delete,
-                                    color: Colors.red, size: 26),
+                                child: const Icon(
+                                  Icons.delete,
+                                  color: Colors.red,
+                                  size: 26,
+                                ),
                               ),
                             ),
                           ),
@@ -256,8 +279,11 @@ class _AddImageScreenState extends State<AddImageScreen> {
                                   width: 2,
                                 ),
                               ),
-                              child: const Icon(Icons.add,
-                                  color: Color(0xFF04557F), size: 30),
+                              child: const Icon(
+                                Icons.add,
+                                color: Color(0xFF04557F),
+                                size: 30,
+                              ),
                             ),
                           ),
                         ),
@@ -280,12 +306,13 @@ class _AddImageScreenState extends State<AddImageScreen> {
                     ),
                   ),
                   onPressed: _isLoading ? null : _createTrip,
-                  child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text(
-                          'Suivant',
-                          style: TextStyle(fontSize: 18, color: Colors.white),
-                        ),
+                  child:
+                      _isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text(
+                            'Suivant',
+                            style: TextStyle(fontSize: 18, color: Colors.white),
+                          ),
                 ),
               ),
             ],
@@ -299,10 +326,11 @@ class _AddImageScreenState extends State<AddImageScreen> {
 class DashedBorderPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFF06477C)
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
+    final paint =
+        Paint()
+          ..color = const Color(0xFF06477C)
+          ..strokeWidth = 2
+          ..style = PaintingStyle.stroke;
 
     const dashWidth = 10.0, dashSpace = 5.0;
     double x = 0, y = 0;
@@ -315,14 +343,20 @@ class DashedBorderPainter extends CustomPainter {
     // Right border
     while (y < size.height) {
       canvas.drawLine(
-          Offset(size.width, y), Offset(size.width, y + dashWidth), paint);
+        Offset(size.width, y),
+        Offset(size.width, y + dashWidth),
+        paint,
+      );
       y += dashWidth + dashSpace;
     }
     // Bottom border
     x = size.width;
     while (x > 0) {
       canvas.drawLine(
-          Offset(x, size.height), Offset(x - dashWidth, size.height), paint);
+        Offset(x, size.height),
+        Offset(x - dashWidth, size.height),
+        paint,
+      );
       x -= dashWidth + dashSpace;
     }
     // Left border
