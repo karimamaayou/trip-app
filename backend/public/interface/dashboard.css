@@ -344,3 +344,33 @@ body {
     transform: rotate(360deg);
   }
 }
+.sidebar-header {
+  text-align: center;
+  padding: 20px 10px;
+}
+
+.sidebar-header .logo {
+  max-width: 100px;
+  height: auto;
+  margin-bottom: 10px;
+}
+.sidebar-header {
+  text-align: center;
+  padding: 20px 10px;
+}
+
+.sidebar-header .logo {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 50%; /* Cercle */
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Animation au hover */
+.sidebar-header .logo:hover {
+  transform: scale(1.1) rotate(5deg); /* Zoom + légère rotation */
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2); /* Ombre plus forte */
+}
+
