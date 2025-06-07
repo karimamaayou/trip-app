@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Connexion Admin | NextTrip</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Roboto", sans-serif;
+      }
+
+      body {
+        background: linear-gradient(to right, #24a500, #188200);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+
+      .login-container {
+        background-color: white;
+        padding: 2.5rem 2rem;
+        border-radius: 12px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+        width: 100%;
+        max-width: 420px;
+        animation: fadeIn 0.8s ease-in-out;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .login-header {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+
+      .login-header h1 {
+        color: #24a500;
+        font-size: 2rem;
+        margin-bottom: 0.3rem;
+      }
+
+      .login-header p {
+        color: #555;
+        font-size: 0.95rem;
+      }
+
+      .form-group {
+        margin-bottom: 1.3rem;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 0.4rem;
+        font-weight: 500;
+        color: #333;
+      }
+
+      .form-group input {
+        width: 100%;
+        padding: 0.9rem;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 1rem;
+        transition: 0.2s ease;
+      }
+
+      .form-group input:focus {
+        outline: none;
+        border-color: #24a500;
+        box-shadow: 0 0 5px rgba(36, 165, 0, 0.3);
+      }
+
+      .login-button {
+        width: 100%;
+        padding: 1rem;
+        background-color: #24a500;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+
+      .login-button:hover {
+        background-color: #1d8500;
+      }
+
+      .error-message {
+        margin-top: 1rem;
+        padding: 0.8rem;
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+        border-radius: 5px;
+        display: none;
+        text-align: center;
+        font-size: 0.9rem;
+      }
+
+      @media (max-width: 480px) {
+        .login-container {
+          padding: 2rem 1.5rem;
+        }
+
+        .login-header h1 {
+          font-size: 1.6rem;
+        }
+      }
+      .login-header {
+  text-align: center;
+  padding: 20px;
+}
+
+.login-logo {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 50%;
+  margin-bottom: 15px;
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.login-logo:hover {
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+}
+
+    </style>
+  </head>
+  <body>
+  <div class="login-container">
+    <div class="login-header">
+      <img src="nexttravellogo.png" alt="Logo NextTrip" class="login-logo" />
+      <h1>NextTrip Admin</h1>
+      <p>Connectez-vous à votre espace administrateur</p>
+    </div>
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="email">Adresse e-mail</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          placeholder="exemple@admin.com"
+          required
+        />
+      </div>
+      <div class="form-group">
+        <label for="password">Mot de passe</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          placeholder="Votre mot de passe"
+          required
+        />
+      </div>
+      <button type="submit" class="login-button">Se connecter</button>
+      <div class="error-message" id="errorMessage">
+        ⚠️ Email ou mot de passe incorrect.
+      </div>
+    </form>
+  </div>
+</body>
+
+
+    <script>
+      const loginForm = document.getElementById("loginForm");
+      const errorMessage = document.getElementById("errorMessage");
+
+      loginForm.addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+
+        // Reset error message
+        errorMessage.style.display = "none";
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          errorMessage.textContent =
+            "⚠️ Veuillez entrer une adresse email valide";
+          errorMessage.style.display = "block";
+          return;
+        }
+
+        // Validate password length
+        if (password.length < 1) {
+          errorMessage.textContent =
+            "⚠️ Le mot de passe doit contenir au moins 6 caractères";
+          errorMessage.style.display = "block";
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            "http://localhost:3000/api/dashboard/login",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                email: email,
+                password: password,
+              }),
+            }
+          );
+
+          const data = await response.json();
+
+          if (response.ok) {
+            // Store user info in localStorage
+            localStorage.setItem("user", JSON.stringify(data.user));
+
+          
+            // Redirect to dashboard
+            window.location.href = "./dashboard.html";
+          } else {
+            errorMessage.textContent = "⚠️ Email ou mot de passe incorrect";
+            errorMessage.style.display = "block";
+          }
+        } catch (error) {
+          console.error("Erreur de connexion:", error);
+          errorMessage.textContent =
+            "⚠️ Une erreur s'est produite, veuillez réessayer.";
+          errorMessage.style.display = "block";
+        }
+      });
+
+      // Check if user is already logged in
+      window.addEventListener("load", () => {
+        const user = localStorage.getItem("user");
+        if (user) {
+          
+        }
+      });
+    </script>
+  </body>
+</html>

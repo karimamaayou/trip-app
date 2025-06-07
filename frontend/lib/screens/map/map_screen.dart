@@ -25,17 +25,36 @@ class Voyage {
       throw Exception('Voyage data is null');
     }
 
+    print('Processing voyage data: $json'); // Debug log
+
     final id = json['id'] as int? ?? DateTime.now().millisecondsSinceEpoch;
     final nom =
         json['titre'] as String? ?? json['nom'] as String? ?? 'Sans titre';
     final imagePath = json['chemin'] as String? ?? '';
+
+    print('Image path from API: $imagePath'); // Debug log
+
     final lat = (json['lat'] as num?)?.toDouble() ?? 0.0;
     final lng = (json['lng'] as num?)?.toDouble() ?? 0.0;
 
-    String imageUrl =
-        imagePath.isNotEmpty
-            ? 'http://localhost:3000${imagePath.startsWith('/') ? '' : '/'}$imagePath'
-            : 'http://localhost:3000/uploads/default_trip.jpg';
+    // Construct the full image URL based on the path format
+    String imageUrl;
+    if (imagePath.isEmpty) {
+      imageUrl = 'http://localhost:3000/uploads/default_trip.jpg';
+    } else if (imagePath.startsWith('/uploads/post_images/')) {
+      // Format: /uploads/post_images/1748444539324-840482498.png
+      imageUrl = 'http://localhost:3000$imagePath';
+    } else if (imagePath.startsWith('/trip-')) {
+      // Format: /trip-1748732253867-796251182.png
+      imageUrl =
+          'http://localhost:3000/uploads/trip_images$imagePath'; // Utilisation de /uploads
+    } else {
+      // Other formats
+      imageUrl =
+          'http://localhost:3000${imagePath.startsWith('/') ? '' : '/'}$imagePath';
+    }
+
+    print('Final image URL: $imageUrl'); // Debug log
 
     return Voyage(
       id: id,

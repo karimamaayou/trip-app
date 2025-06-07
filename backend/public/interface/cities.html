@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NextTrip Admin - Gestion des Villes</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="dashboard.css" />
+    <link rel="stylesheet" href="activities.css" />
+  </head>
+  <body>
+     <div class="sidebar">
+          <div class="sidebar-header">
+    <img src="nexttravellogo.png" alt="NextTrip Logo" class="logo" />
+    <h2>NextTrip Admin</h2>
+  </div>
+      <div class="sidebar-menu">
+        <a href="dashboard.html" class="menu-item">
+          <i class="fas fa-chart-line"></i>
+            Tableau de bord
+        </a>
+        <a href="users.html" class="menu-item">
+          <i class="fas fa-users"> </i>
+          Utilisateurs
+        </a>
+        <a href="groupes.html" class="menu-item">
+          <i class="fas fa-users-cog"> </i>
+          Groupes de trips
+        </a>
+        <a href="cities.html" class="menu-item active">
+          <i class="fas fa-hiking"></i>
+          Villes
+        </a>
+        <a href="activities.html" class="menu-item ">
+          <i class="fas fa-city"></i>
+          Activités
+        </a>
+        <a href="login.html" class="menu-item">
+          <i class="fas fa-sign-out-alt"></i>
+          Déconnexion
+        </a>
+      </div>
+    </div>
+
+    <div class="main-content">
+      <div class="page-header">
+        <h1>Gestion des Villes</h1>
+      </div>
+
+      <div class="cities-container">
+        <div class="search-add-container">
+          <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input
+              type="text"
+              id="searchCity"
+              placeholder="Rechercher une ville..."
+            />
+          </div>
+          <button class="btn-add-city" id="showAddCityForm">
+            <i class="fas fa-plus"></i> Ajouter une ville
+          </button>
+        </div>
+
+        <div id="loadingSpinner" class="loading-spinner">
+          <i class="fas fa-spinner fa-2x"></i>
+        </div>
+
+        <table class="cities-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nom de la ville</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="citiesTableBody">
+            <!-- Les villes seront ajoutées ici dynamiquement -->
+          </tbody>
+        </table>
+
+        <div
+          id="successAlert"
+          class="alert success-alert"
+          style="display: none"
+        >
+          <i class="fas fa-check-circle"></i>
+          <span></span>
+        </div>
+        <div id="errorAlert" class="alert error-alert" style="display: none">
+          <i class="fas fa-exclamation-circle"></i>
+          <span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal pour ajouter une ville -->
+    <div id="addCityModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3><i class="fas fa-plus-circle"></i> Ajouter une nouvelle ville</h3>
+          <button class="close-btn" onclick="closeAddCityModal()">
+            &times;
+          </button>
+        </div>
+        <form id="addCityForm">
+          <div class="form-group">
+            <label for="cityName">Nom de la ville</label>
+            <input
+              type="text"
+              id="cityName"
+              name="cityName"
+              required
+              placeholder="Entrez le nom de la ville"
+            />
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-submit">
+              <i class="fas fa-save"></i> Enregistrer
+            </button>
+            <button
+              type="button"
+              class="btn-cancel"
+              onclick="closeAddCityModal()"
+            >
+              <i class="fas fa-times"></i> Annuler
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <style>
+  .search-add-container {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+        align-items: center;
+      }
+
+      .search-box {
+        flex: 1;
+        position: relative;
+      }
+
+      .search-box i {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #666;
+      }
+
+      .search-box input {
+        width: 100%;
+        padding: 10px 10px 10px 35px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+      }
+
+      .btn-add-city {
+        background-color: #2c6f19;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 500;
+        transition: background-color 0.3s;
+      }
+
+      .btn-add-city:hover {
+        background-color: #3f8f26;
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+      }
+
+      .modal-content {
+        background-color: #fff;
+        margin: 15% auto;
+        padding: 25px;
+        border-radius: 12px;
+        width: 400px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      .modal-header h3 {
+        margin: 0;
+        color: #2c6f19;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .close-btn {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #666;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: #333;
+        font-weight: 500;
+      }
+
+      .form-group input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+      }
+
+      .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+      }
+
+      .btn-submit {
+        background-color: #2c6f19;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn-cancel {
+        background-color: #6c757d;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn-submit:hover {
+        background-color: #3f8f26;
+      }
+
+      .btn-cancel:hover {
+        background-color: #5a6268;
+      }
+    </style>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <script>
+      // Afficher le modal d'ajout
+      document
+        .getElementById("showAddCityForm")
+        .addEventListener("click", function () {
+          document.getElementById("addCityModal").style.display = "block";
+        });
+
+      // Fermer le modal d'ajout
+      function closeAddCityModal() {
+        document.getElementById("addCityModal").style.display = "none";
+        document.getElementById("cityName").value = "";
+      }
+
+      // Fermer le modal si on clique en dehors
+      window.addEventListener("click", function (event) {
+        const modal = document.getElementById("addCityModal");
+        if (event.target === modal) {
+          closeAddCityModal();
+        }
+      });
+
+      // Charger les villes au chargement de la page
+      async function loadCities() {
+        const spinner = document.getElementById("loadingSpinner");
+        spinner.classList.add("active");
+
+        try {
+          const response = await fetch(
+            "http://localhost:3000/api/dashboard/villes"
+          );
+          const cities = await response.json();
+          const tableBody = document.getElementById("citiesTableBody");
+          tableBody.innerHTML = "";
+
+          cities.forEach((city) => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+              <td>${city.id_ville}</td>
+              <td>${city.nom_ville}</td>
+              <td>
+                <button class="btn-delete" onclick="deleteCity(${city.id_ville})">
+                  <i class="fas fa-trash"></i> Supprimer
+                </button>
+              </td>
+            `;
+            tableBody.appendChild(row);
+          });
+        } catch (error) {
+          console.error("Erreur lors du chargement des villes:", error);
+          showError("Erreur lors du chargement des villes");
+        } finally {
+          spinner.classList.remove("active");
+        }
+      }
+
+      // Ajouter une nouvelle ville
+      document
+        .getElementById("addCityForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const cityName = document.getElementById("cityName").value;
+
+          try {
+            const response = await fetch(
+              "http://localhost:3000/api/dashboard/Addvilles",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ nom_ville: cityName }),
+              }
+            );
+
+            if (response.ok) {
+              document.getElementById("cityName").value = "";
+              document.getElementById("addCityModal").style.display = "none";
+              showSuccess("Ville ajoutée avec succès");
+              loadCities(); // Recharger la liste des villes
+            } else {
+              const errorData = await response.json();
+              showError(
+                errorData.message || "Erreur lors de l'ajout de la ville"
+              );
+            }
+          } catch (error) {
+            console.error("Erreur lors de l'ajout de la ville:", error);
+            showError("Erreur lors de l'ajout de la ville");
+          }
+        });
+
+      // Supprimer une ville
+      async function deleteCity(cityId) {
+        if (confirm("Êtes-vous sûr de vouloir supprimer cette ville ?")) {
+          try {
+            const response = await fetch(
+              `http://localhost:3000/api/dashboard/villes/${cityId}`,
+              { method: "DELETE" }
+            );
+            const data = await response.json();
+
+            if (response.ok) {
+              showSuccess(data.message || "Ville supprimée avec succès");
+              loadCities(); // Recharge la liste
+            } else {
+              showError(
+                data.message || "Erreur lors de la suppression de la ville"
+              );
+            }
+          } catch (error) {
+            showError("Erreur lors de la suppression de la ville");
+          }
+        }
+      }
+
+      // Fonctions utilitaires
+      function showSuccess(message) {
+        const successAlert = document.getElementById("successAlert");
+        successAlert.querySelector("span").textContent = message;
+        successAlert.style.display = "flex";
+        setTimeout(() => {
+          successAlert.style.display = "none";
+        }, 4000);
+      }
+
+      function showError(message) {
+        const errorAlert = document.getElementById("errorAlert");
+        errorAlert.querySelector("span").textContent = message;
+        errorAlert.style.display = "flex";
+        setTimeout(() => {
+          errorAlert.style.display = "none";
+        }, 4000);
+      }
+
+      // Charger les villes au chargement de la page
+      window.addEventListener("load", loadCities);
+
+      // Fonction de recherche
+      document
+        .getElementById("searchCity")
+        .addEventListener("input", function (e) {
+          const searchTerm = e.target.value.toLowerCase();
+          const rows = document.querySelectorAll("#citiesTableBody tr");
+
+          rows.forEach((row) => {
+            const cityName = row
+              .querySelector("td:nth-child(2)")
+              .textContent.toLowerCase();
+            if (cityName.includes(searchTerm)) {
+              row.style.display = "";
+            } else {
+              row.style.display = "none";
+            }
+          });
+        });
+    </script>
+  </body>
+</html>
