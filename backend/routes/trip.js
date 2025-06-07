@@ -73,6 +73,9 @@ router.get('/user/:userId', tripController.getUserTrips);
 // Get voyage participants
 router.get('/:voyageId/participants', tripController.getVoyageParticipants);
 
+// Get all trip participants including non-accepted ones
+router.get('/:tripId/all-participants', tripController.getAllTripParticipants);
+
 // Get trip details
 router.get('/:tripId', tripController.getTripDetails);
 

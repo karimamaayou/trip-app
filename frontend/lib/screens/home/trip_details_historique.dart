@@ -17,8 +17,7 @@ import 'package:frontend/screens/home/quit_confirmation_screen.dart';
 class TripDetailsHistorique extends StatefulWidget {
   final int tripId;
 
-  const TripDetailsHistorique({Key? key, required this.tripId})
-    : super(key: key);
+  const TripDetailsHistorique({super.key, required this.tripId});
 
   @override
   _TripDetailsPageState createState() => _TripDetailsPageState();
@@ -415,7 +414,7 @@ class _TripDetailsPageState extends State<TripDetailsHistorique> with WidgetsBin
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        "Membre (${participants.where((p) => p['statut'] == 'accepte').length}/${trip['capacite_max']})",
+                        "Membre (${participants.length}/${trip['capacite_max']})",
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       GestureDetector(
@@ -444,7 +443,6 @@ class _TripDetailsPageState extends State<TripDetailsHistorique> with WidgetsBin
                   const SizedBox(height: 12),
                   Column(
                     children: participants
-                        .where((member) => member['statut'] == 'accepte') // Filter only accepted members
                         .take(4) // Only show first 4 members
                         .map<Widget>((member) {
                       final currentUserId = int.parse(User.getUserId() ?? '0');
@@ -472,10 +470,10 @@ class _TripDetailsPageState extends State<TripDetailsHistorique> with WidgetsBin
                         child: _memberCard(
                           '${member['id_voyageur']}_${member['prenom']} ${member['nom']}',
                           member['role'] ?? 'Voyageur',
-                            'http://localhost:3000${member['photo_profil']}',
+                          'http://localhost:3000${member['photo_profil']}',
                         ),
-                          );
-                        }).toList(),
+                      );
+                    }).toList(),
                   ),
                   const SizedBox(height: 24),
                   _buildActionButton(),

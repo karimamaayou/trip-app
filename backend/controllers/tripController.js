@@ -200,6 +200,23 @@ const tripController = {
         }
     },
 
+    // Get all trip participants including non-accepted ones
+    getAllTripParticipants: async (req, res) => {
+        try {
+            const { tripId } = req.params;
+            const participants = await Trip.getAllTripParticipants(tripId);
+            
+            if (!participants || participants.length === 0) {
+                return res.status(404).json({ message: 'No participants found for this trip' });
+            }
+
+            res.json(participants);
+        } catch (error) {
+            console.error('Error getting all trip participants:', error);
+            res.status(500).json({ message: 'Internal server error' });
+        }
+    },
+
     // Create a new trip with images
     createTripWithImages: async (req, res) => {
         try {

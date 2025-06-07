@@ -9,7 +9,7 @@ import 'package:frontend/models/user.dart';
 class MembersScreen extends StatefulWidget {
   final int tripId;
   final String? currentUserRole;
-  const MembersScreen({Key? key, required this.tripId, this.currentUserRole}) : super(key: key);
+  const MembersScreen({super.key, required this.tripId, this.currentUserRole});
 
   @override
   State<MembersScreen> createState() => _MembersScreenState();
@@ -67,16 +67,17 @@ class _MembersScreenState extends State<MembersScreen> with WidgetsBindingObserv
     setState(() { isLoading = true; });
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:3000/api/trips/${widget.tripId}/participants'),
+        Uri.parse('http://localhost:3000/api/trips/${widget.tripId}/all-participants'),
       );
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         setState(() {
-          members = data.where((m) => m['statut'] == 'accepte').map((m) => {
+          members = data.map((m) => {
             'id': m['id_voyageur'],
             'nom': m['nom'],
             'prenom': m['prenom'],
             'role': m['role'],
+            'statut': m['statut'],
             'photo_profil': m['photo_profil'],
           }).toList();
           filteredMembers = members;

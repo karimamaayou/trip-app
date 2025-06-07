@@ -192,7 +192,7 @@ const Trip = {
                 SELECT p.*, u.nom, u.prenom, u.email, u.photo_profil
                 FROM participations p
                 JOIN utilisateurs u ON p.id_voyageur = u.id_utilisateur
-                WHERE p.id_voyage = ?
+                WHERE p.id_voyage = ? AND p.statut = 'accepte'
             `, [tripId]);
 
             const [activities] = await db.query(`
@@ -230,6 +230,21 @@ const Trip = {
             return result;
         } catch (error) {
             console.error('❌ Error in getTripDetailsById:', error);
+            throw error;
+        }
+    },
+
+    getAllTripParticipants: async (tripId) => {
+        try {
+            const [participants] = await db.query(`
+                SELECT p.*, u.nom, u.prenom, u.email, u.photo_profil
+                FROM participations p
+                JOIN utilisateurs u ON p.id_voyageur = u.id_utilisateur
+                WHERE p.id_voyage = ?
+            `, [tripId]);
+            return participants;
+        } catch (error) {
+            console.error('Error in getAllTripParticipants:', error);
             throw error;
         }
     },
