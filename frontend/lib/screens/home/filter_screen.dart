@@ -5,7 +5,7 @@ import 'dart:convert';
 class SearchFilterPage extends StatefulWidget {
   final Map<String, dynamic>? initialFilters;
 
-  const SearchFilterPage({Key? key, this.initialFilters}) : super(key: key);
+  const SearchFilterPage({super.key, this.initialFilters});
 
   @override
   _SearchFilterPageState createState() => _SearchFilterPageState();

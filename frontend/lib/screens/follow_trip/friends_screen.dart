@@ -6,7 +6,7 @@ import 'package:frontend/models/user.dart';
 
 class FriendsListScreen extends StatefulWidget {
   final int tripId;
-  const FriendsListScreen({Key? key, required this.tripId}) : super(key: key);
+  const FriendsListScreen({super.key, required this.tripId});
 
   @override
   State<FriendsListScreen> createState() => _FriendsListScreenState();

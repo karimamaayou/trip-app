@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:frontend/models/user.dart';
 
 class CreationVoyagePage extends StatefulWidget {
+  const CreationVoyagePage({super.key});
+
   @override
   _CreationVoyagePageState createState() => _CreationVoyagePageState();
 }

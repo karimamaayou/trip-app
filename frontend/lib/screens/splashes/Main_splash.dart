@@ -4,6 +4,8 @@ import 'package:frontend/screens/splashes/OnboardingScreen1.dart';
 
 
 class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
   @override
   _SplashScreenState createState() => _SplashScreenState();
 }

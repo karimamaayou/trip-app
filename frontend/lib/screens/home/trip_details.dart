@@ -9,7 +9,7 @@ import 'package:frontend/models/user.dart';
 class TripDetailsPage extends StatefulWidget {
   final int tripId;
 
-  const TripDetailsPage({Key? key, required this.tripId}) : super(key: key);
+  const TripDetailsPage({super.key, required this.tripId});
 
   @override
   _TripDetailsPageState createState() => _TripDetailsPageState();

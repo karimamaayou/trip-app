@@ -10,6 +10,8 @@ import 'package:http_parser/http_parser.dart';
 import 'dart:convert';
 
 class EditProfileScreen extends StatefulWidget {
+  const EditProfileScreen({super.key});
+
   @override
   _EditProfileScreenState createState() => _EditProfileScreenState();
 }
@@ -134,7 +136,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           }
         } else {
           print('Failed with status code: ${response.statusCode}');
-          throw Exception('Failed to update profile picture: ${responseData}');
+          throw Exception('Failed to update profile picture: $responseData');
         }
       } catch (e, stackTrace) {
         print('Error updating profile picture: $e');

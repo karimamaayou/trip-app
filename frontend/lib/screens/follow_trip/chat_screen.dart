@@ -11,7 +11,7 @@ import 'package:intl/intl.dart';
 
 class ChatScreen extends StatefulWidget {
   final int tripId;
-  const ChatScreen({Key? key, required this.tripId}) : super(key: key);
+  const ChatScreen({super.key, required this.tripId});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();

@@ -9,9 +9,9 @@ class TripDetailsPage extends StatefulWidget {
   final int tripId;
 
   const TripDetailsPage({
-    Key? key,
+    super.key,
     required this.tripId,
-  }) : super(key: key);
+  });
 
   @override
   State<TripDetailsPage> createState() => _TripDetailsPageState();

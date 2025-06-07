@@ -6,7 +6,7 @@ import 'package:frontend/models/user.dart';
 class MembersPage extends StatefulWidget {
   final List<Map<String, dynamic>> members;
 
-  const MembersPage({Key? key, required this.members}) : super(key: key);
+  const MembersPage({super.key, required this.members});
 
   @override
   State<MembersPage> createState() => _MembersPageState();

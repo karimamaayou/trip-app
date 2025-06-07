@@ -6,7 +6,7 @@ import 'package:frontend/screens/home/reject_request_screen.dart';
 class DemandeScreen extends StatefulWidget {
   final int tripId;
 
-  const DemandeScreen({Key? key, required this.tripId}) : super(key: key);
+  const DemandeScreen({super.key, required this.tripId});
 
   @override
   _DemandeScreenState createState() => _DemandeScreenState();

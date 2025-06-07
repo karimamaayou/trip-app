@@ -12,7 +12,7 @@ import 'dart:convert';
 class AddImageScreen extends StatefulWidget {
   final List<Map<String, dynamic>> formData;
 
-  const AddImageScreen({Key? key, required this.formData}) : super(key: key);
+  const AddImageScreen({super.key, required this.formData});
 
   @override
   State<AddImageScreen> createState() => _AddImageScreenState();

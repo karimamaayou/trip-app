@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class DemandeEnvoyerScreen extends StatelessWidget {
-  const DemandeEnvoyerScreen({Key? key}) : super(key: key);
+  const DemandeEnvoyerScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

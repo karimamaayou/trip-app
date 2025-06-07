@@ -14,13 +14,13 @@ class MemberProfileScreen extends StatefulWidget {
   final int tripId;
 
   const MemberProfileScreen({
-    Key? key,
+    super.key,
     required this.memberId,
     required this.memberName,
     required this.memberPhoto,
     this.currentUserRole,
     required this.tripId,
-  }) : super(key: key);
+  });
 
   @override
   _MemberProfileScreenState createState() => _MemberProfileScreenState();

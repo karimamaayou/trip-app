@@ -8,6 +8,8 @@ import 'package:http/http.dart' as http;
 import 'package:frontend/models/user.dart';
 
 class TravelPage extends StatefulWidget {
+  const TravelPage({super.key});
+
   @override
   _TravelPageState createState() => _TravelPageState();
 }
@@ -42,7 +44,7 @@ class _TravelPageState extends State<TravelPage> {
 
       // First get the trips
       final tripsResponse = await http.get(
-        Uri.parse('http://localhost:3000/api/trips/user/${userId}'),
+        Uri.parse('http://localhost:3000/api/trips/user/$userId'),
       );
 
       print('Trips Response Status: ${tripsResponse.statusCode}');

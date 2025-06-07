@@ -5,7 +5,7 @@ import 'dart:io';
 class InfosVoyagePage extends StatefulWidget {
   final Map<String, dynamic> formData;
 
-  InfosVoyagePage({required this.formData});
+  const InfosVoyagePage({super.key, required this.formData});
   @override
   _InfosVoyagePageState createState() => _InfosVoyagePageState();
 }

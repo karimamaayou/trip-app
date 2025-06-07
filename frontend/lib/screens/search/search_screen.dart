@@ -5,6 +5,8 @@ import 'package:frontend/screens/home/trip_details.dart';
 import 'package:frontend/screens/home/filter_screen.dart';
 
 class SearchScreen extends StatefulWidget {
+  const SearchScreen({super.key});
+
   @override
   _SearchScreenState createState() => _SearchScreenState();
 }
@@ -332,7 +334,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         itemCount: displayedTrips.length + (isLoadingMore ? 1 : 0),
                         itemBuilder: (context, index) {
                           if (index == displayedTrips.length) {
-                            return Container(
+                            return SizedBox(
                               height: 100,
                               child: Center(
                                 child: Column(

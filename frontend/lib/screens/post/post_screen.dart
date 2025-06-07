@@ -15,6 +15,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class PostsPage extends StatefulWidget {
+  const PostsPage({super.key});
+
   @override
   _PostsPageState createState() => _PostsPageState();
 }
@@ -225,8 +227,8 @@ class _PostsPageState extends State<PostsPage> {
             MaterialPageRoute(builder: (context) => ImageScreen(formData: [])),
           );
         },
-        child: Icon(Icons.add, size: 28, color: Colors.white),
         shape: CircleBorder(),
+        child: Icon(Icons.add, size: 28, color: Colors.white),
       ),
     );
   }
@@ -236,7 +238,7 @@ class PostCard extends StatefulWidget {
   final Map<String, dynamic> post;
   final VoidCallback onReactionChanged;
 
-  const PostCard({required this.post, required this.onReactionChanged});
+  const PostCard({super.key, required this.post, required this.onReactionChanged});
 
   @override
   _PostCardState createState() => _PostCardState();
@@ -358,7 +360,7 @@ class _PostCardState extends State<PostCard> {
 
             // Images carousel
             if (images.isNotEmpty)
-              Container(
+              SizedBox(
                 height: 200,
                 child: Stack(
                   children: [
@@ -458,7 +460,7 @@ class _PostCardState extends State<PostCard> {
 class ImageDetailPage extends StatelessWidget {
   final String imagePath;
 
-  const ImageDetailPage({required this.imagePath});
+  const ImageDetailPage({super.key, required this.imagePath});
 
   Future<void> _saveImage(BuildContext context) async {
     try {

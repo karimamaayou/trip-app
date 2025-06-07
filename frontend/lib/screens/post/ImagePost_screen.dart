@@ -9,7 +9,7 @@ import 'package:image_picker/image_picker.dart';
 class ImageScreen extends StatefulWidget {
   final List<Map<String, dynamic>> formData;
 
-  const ImageScreen({Key? key, required this.formData}) : super(key: key);
+  const ImageScreen({super.key, required this.formData});
 
   @override
   State<ImageScreen> createState() => _AddImageScreenState();

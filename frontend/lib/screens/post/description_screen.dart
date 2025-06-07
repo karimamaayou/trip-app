@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:frontend/screens/post/post_screen.dart';
 import 'package:frontend/main_screen.dart';
 import 'package:frontend/models/user.dart';
 import 'package:http/http.dart' as http;

@@ -6,7 +6,7 @@ import 'package:frontend/services/api_service.dart';
 import 'package:intl/intl.dart';
 
 class NotificationsScreen extends StatefulWidget {
-  const NotificationsScreen({Key? key}) : super(key: key);
+  const NotificationsScreen({super.key});
 
   @override
   _NotificationsScreenState createState() => _NotificationsScreenState();

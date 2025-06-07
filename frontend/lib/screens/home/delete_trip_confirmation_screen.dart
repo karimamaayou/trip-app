@@ -3,7 +3,6 @@ import 'package:http/http.dart' as http;
 import 'dart:convert'; // Import dart:convert for json handling
 import 'package:frontend/services/api_service.dart';
 import 'package:frontend/models/user.dart';
-import 'package:frontend/screens/auth/login_screen.dart';
 import 'package:frontend/main_screen.dart'; // Import MainScreen
 
 class DeleteTripConfirmationScreen extends StatefulWidget {

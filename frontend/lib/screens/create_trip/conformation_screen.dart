@@ -8,7 +8,7 @@ import 'package:frontend/screens/home/home_screen.dart';
 class Conformation extends StatelessWidget {
   final List<Map<String, dynamic>> formData;
 
-  const Conformation({Key? key, required this.formData}) : super(key: key);
+  const Conformation({super.key, required this.formData});
 
   @override
   Widget build(BuildContext context) {

@@ -13,11 +13,11 @@ class ExclusionVoyage extends StatefulWidget {
   final int tripId;
 
   const ExclusionVoyage({
-    Key? key,
+    super.key,
     this.memberName,
     this.memberId,
     required this.tripId,
-  }) : super(key: key);
+  });
 
   @override
   State<ExclusionVoyage> createState() => _ExclusionVoyageState();

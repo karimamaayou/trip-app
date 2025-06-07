@@ -8,13 +8,13 @@ class ImageCarousel extends StatefulWidget {
   final VoidCallback? onBackPressed;
 
   const ImageCarousel({
-    Key? key,
+    super.key,
     required this.images,
     this.height = 400,
     this.showIndicators = true,
     this.showBackButton = true,
     this.onBackPressed,
-  }) : super(key: key);
+  });
 
   @override
   State<ImageCarousel> createState() => _ImageCarouselState();

@@ -13,6 +13,8 @@ import 'package:frontend/screens/profile/logout_confirmation_screen.dart';
 const Color primaryColor = Color(0xFF0054A5);
 
 class CustomProfileScreen extends StatefulWidget {
+  const CustomProfileScreen({super.key});
+
   @override
   _CustomProfileScreenState createState() => _CustomProfileScreenState();
 }
@@ -181,7 +183,7 @@ class ProfileTile extends StatelessWidget {
   final VoidCallback onTap;
   final Color? textColor;
 
-  const ProfileTile({
+  const ProfileTile({super.key, 
     required this.icon,
     required this.title,
     required this.onTap,

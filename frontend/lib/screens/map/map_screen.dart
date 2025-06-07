@@ -47,7 +47,7 @@ class Voyage {
 }
 
 class MoroccoMapDesign extends StatefulWidget {
-  const MoroccoMapDesign({Key? key}) : super(key: key);
+  const MoroccoMapDesign({super.key});
 
   @override
   _MoroccoMapDesignState createState() => _MoroccoMapDesignState();
@@ -110,15 +110,13 @@ class _MoroccoMapDesignState extends State<MoroccoMapDesign> {
       height: 140,
       child: GestureDetector(
         onTap: () {
-          if (voyage.id != null) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => TripDetailsPage(tripId: voyage.id),
-              ),
-            );
-          }
-        },
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => TripDetailsPage(tripId: voyage.id),
+            ),
+          );
+                },
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

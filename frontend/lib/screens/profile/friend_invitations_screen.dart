@@ -5,7 +5,7 @@ import 'package:frontend/models/user.dart';
 import 'package:frontend/services/api_service.dart';
 
 class FriendInvitationsScreen extends StatefulWidget {
-  const FriendInvitationsScreen({Key? key}) : super(key: key);
+  const FriendInvitationsScreen({super.key});
 
   @override
   _FriendInvitationsScreenState createState() => _FriendInvitationsScreenState();
@@ -71,7 +71,7 @@ class _FriendInvitationsScreenState extends State<FriendInvitationsScreen> {
   Future<void> _handleInvitation(int senderId, String action) async {
     try {
       final response = await http.post(
-        Uri.parse('${Environment.apiHost}/api/friends/invitation/${senderId}/respond?currentUserId=${User.getUserId()}'),
+        Uri.parse('${Environment.apiHost}/api/friends/invitation/$senderId/respond?currentUserId=${User.getUserId()}'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'action': action}),
       );

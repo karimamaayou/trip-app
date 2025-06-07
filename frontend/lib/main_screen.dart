@@ -4,7 +4,6 @@ import 'package:frontend/screens/follow_trip/suivie_screen.dart';
 import 'package:frontend/screens/home/home_screen.dart';
 import 'package:frontend/screens/map/map_screen.dart';
 import 'package:frontend/screens/post/post_screen.dart';
-import 'package:frontend/screens/profile/pofile_screen.dart';
 import 'package:frontend/widgets/bottom_navigation.dart';
 
 class MainScreen extends StatefulWidget {

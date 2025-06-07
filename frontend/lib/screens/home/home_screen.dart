@@ -13,6 +13,8 @@ import 'dart:async';
 import 'package:frontend/screens/notifications/notifications_screen.dart';
 
 class OffersPage extends StatefulWidget {
+  const OffersPage({super.key});
+
   @override
   _OffersPageState createState() => _OffersPageState();
 }
@@ -343,8 +345,8 @@ class _OffersPageState extends State<OffersPage> {
             MaterialPageRoute(builder: (context) => CreationVoyagePage()),
           );
         },
-        child: Icon(Icons.add, size: 28, color: Colors.white),
         shape: CircleBorder(),
+        child: Icon(Icons.add, size: 28, color: Colors.white),
       ),
       body: SafeArea(
         child: Column(
@@ -560,7 +562,7 @@ class _OffersPageState extends State<OffersPage> {
                                 itemCount: filteredOffres.length + (isLoadingMore ? 1 : 0),
                                 itemBuilder: (context, index) {
                                   if (index == filteredOffres.length) {
-                                    return Container(
+                                    return SizedBox(
                                       height: 100,
                                       child: Center(
                                         child: Column(

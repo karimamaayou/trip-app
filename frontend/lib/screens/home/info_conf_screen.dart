@@ -4,6 +4,8 @@ import 'package:frontend/screens/auth/login_screen.dart';
 
 
 class InfpConfirmationScreen extends StatelessWidget {
+  const InfpConfirmationScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
