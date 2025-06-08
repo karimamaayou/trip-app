@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/screens/create_trip/infos_voyage_screen.dart';
 import 'package:frontend/screens/create_trip/point_depart.dart';
+import 'package:frontend/services/api_service.dart';
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -57,7 +58,7 @@ class _CreationVoyagePageState extends State<CreationVoyagePage> {
     try {
       print('Fetching activities...');
       final response = await http.get(
-        Uri.parse('http://localhost:3000/api/data/activities'),
+        Uri.parse('${Environment.apiHost}/api/data/activities'),
       );
 
       print('Response status code: ${response.statusCode}');
@@ -97,7 +98,7 @@ class _CreationVoyagePageState extends State<CreationVoyagePage> {
   Future<void> _fetchCities() async {
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:3000/api/data/villes'),
+        Uri.parse('${Environment.apiHost}/api/data/villes'),
       );
 
       if (response.statusCode == 200) {

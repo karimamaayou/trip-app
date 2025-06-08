@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/services/api_service.dart';
 import 'package:http/http.dart' as http;
 
 class RejectRequestScreen extends StatefulWidget {
@@ -29,7 +30,7 @@ class _RejectRequestScreenState extends State<RejectRequestScreen> {
   Future<void> _rejectRequest() async {
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:3000/api/trips/requests/${widget.participationId}/reject'),
+        Uri.parse('${Environment.apiHost}/api/trips/requests/${widget.participationId}/reject'),
         headers: {'Content-Type': 'application/json'},
       );
 

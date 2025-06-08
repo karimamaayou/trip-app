@@ -3,6 +3,7 @@ import 'package:frontend/screens/chat/chat_screen.dart';
 import 'package:frontend/screens/home/trip_details.dart';
 import 'package:frontend/screens/home/trip_details_historique.dart';
 import 'package:frontend/screens/post/post_screen.dart';
+import 'package:frontend/services/api_service.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:frontend/models/user.dart';
@@ -44,7 +45,7 @@ class _TravelPageState extends State<TravelPage> {
 
       // First get the trips
       final tripsResponse = await http.get(
-        Uri.parse('http://localhost:3000/api/trips/user/$userId'),
+        Uri.parse('${Environment.apiHost}/api/trips/user/$userId'),
       );
 
       print('Trips Response Status: ${tripsResponse.statusCode}');
@@ -58,7 +59,7 @@ class _TravelPageState extends State<TravelPage> {
         for (var trip in tripsData) {
           try {
             // Get participations for this trip
-            final participationUrl = 'http://localhost:3000/api/trips/${trip['id_voyage']}/participants';
+            final participationUrl = '${Environment.apiHost}/api/trips/${trip['id_voyage']}/participants';
             print('Fetching participants from URL: $participationUrl');
             
             final participationResponse = await http.get(

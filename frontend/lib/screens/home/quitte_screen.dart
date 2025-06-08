@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/services/api_service.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:frontend/models/user.dart';
@@ -32,8 +33,8 @@ class _ExclusionVoyageState extends State<ExclusionVoyage> {
     });
 
     final url = widget.memberId != null
-        ? 'http://localhost:3000/api/trips/${widget.tripId}/remove-member/${widget.memberId}'
-        : 'http://localhost:3000/api/trips/${widget.tripId}/leave';
+        ? '${Environment.apiHost}/api/trips/${widget.tripId}/remove-member/${widget.memberId}'
+        : '${Environment.apiHost}/api/trips/${widget.tripId}/leave';
 
     try {
       final response = await http.delete(

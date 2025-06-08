@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/services/api_service.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:frontend/screens/home/trip_details.dart';
@@ -55,7 +56,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
       // Fetch all trips at once
       final response = await http.get(
-        Uri.parse('http://localhost:3000/api/trips/paginated?page=1&limit=1000'),
+        Uri.parse('${Environment.apiHost}/api/trips/paginated?page=1&limit=1000'),
       );
       
       if (response.statusCode == 200) {
@@ -403,7 +404,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
                   child: Image.network(
-                    imageUrl != null ? 'http://localhost:3000$imageUrl' : 'http://localhost:3000/assets/default_trip.jpg',
+                    imageUrl != null ? '${Environment.apiHost}$imageUrl' : '${Environment.apiHost}/assets/default_trip.jpg',
                     width: double.infinity,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {

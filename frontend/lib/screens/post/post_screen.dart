@@ -335,7 +335,7 @@ class _PostCardState extends State<PostCard> {
                 CircleAvatar(
                   backgroundImage:
                       profilePicture.isNotEmpty
-                          ? NetworkImage('http://localhost:3000$profilePicture')
+                          ? NetworkImage('${Environment.apiHost}$profilePicture')
                           : const AssetImage('assets/profile.jpg')
                               as ImageProvider,
                   radius: 20,
@@ -381,7 +381,7 @@ class _PostCardState extends State<PostCard> {
                                 builder:
                                     (_) => ImageDetailPage(
                                       imagePath:
-                                          'http://localhost:3000${images[index]}',
+                                          '${Environment.apiHost}${images[index]}',
                                     ),
                               ),
                             );
@@ -389,7 +389,7 @@ class _PostCardState extends State<PostCard> {
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(3),
                             child: Image.network(
-                              'http://localhost:3000${images[index]}',
+                              '${Environment.apiHost}${images[index]}',
                               fit: BoxFit.cover,
                               width: double.infinity,
                             ),
@@ -538,6 +538,7 @@ class ImageDetailPage extends StatelessWidget {
         ),
       ),
       body: Column(
+        
         children: [
           Expanded(
             child: InteractiveViewer(

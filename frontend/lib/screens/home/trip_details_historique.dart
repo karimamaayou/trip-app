@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/screens/follow_trip/demande_screen.dart';
 import 'package:frontend/screens/follow_trip/members_screen.dart';
 import 'package:frontend/screens/home/quitte_screen.dart';
+import 'package:frontend/services/api_service.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:frontend/screens/home/info_conf_screen.dart';
@@ -66,7 +67,7 @@ class _TripDetailsPageState extends State<TripDetailsHistorique> with WidgetsBin
   Future<void> _fetchTripDetails() async {
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:3000/api/trips/details/${widget.tripId}'),
+        Uri.parse('${Environment.apiHost}/api/trips/details/${widget.tripId}'),
       );
 
       if (response.statusCode == 200) {
@@ -114,7 +115,7 @@ class _TripDetailsPageState extends State<TripDetailsHistorique> with WidgetsBin
 
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:3000/api/trips/${widget.tripId}/join'),
+        Uri.parse('${Environment.apiHost}/api/trips/${widget.tripId}/join'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'userId': int.parse(User.getUserId() ?? '0')}),
       );
@@ -273,7 +274,7 @@ class _TripDetailsPageState extends State<TripDetailsHistorique> with WidgetsBin
                                   bottomRight: Radius.circular(15),
                                 ),
                                 child: Image.network(
-                                  'http://localhost:3000${images[index]['chemin']}',
+                                  '${Environment.apiHost}${images[index]['chemin']}',
                                   fit: BoxFit.cover,
                                   errorBuilder: (context, error, stackTrace) {
                                     return Container(
@@ -470,7 +471,7 @@ class _TripDetailsPageState extends State<TripDetailsHistorique> with WidgetsBin
                         child: _memberCard(
                           '${member['id_voyageur']}_${member['prenom']} ${member['nom']}',
                           member['role'] ?? 'Voyageur',
-                          'http://localhost:3000${member['photo_profil']}',
+                          '${Environment.apiHost}${member['photo_profil']}',
                         ),
                       );
                     }).toList(),

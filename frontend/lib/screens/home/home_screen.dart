@@ -71,7 +71,7 @@ class _OffersPageState extends State<OffersPage> {
   Future<void> _fetchFilteredTrips(int page) async {
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:3000/api/trips/paginated?page=$page&limit=4'),
+        Uri.parse('${Environment.apiHost}/api/trips/paginated?page=$page&limit=4'),
       );
       
       if (response.statusCode == 200) {
@@ -164,7 +164,7 @@ class _OffersPageState extends State<OffersPage> {
       } else {
         // Load more regular trips
         final response = await http.get(
-          Uri.parse('http://localhost:3000/api/trips/paginated?page=${currentPage + 1}&limit=4'),
+          Uri.parse('${Environment.apiHost}/api/trips/paginated?page=${currentPage + 1}&limit=4'),
         );
 
         if (response.statusCode == 200) {
@@ -222,7 +222,7 @@ class _OffersPageState extends State<OffersPage> {
 
       print('Starting _fetchTrips...'); // Debug log
       final response = await http.get(
-        Uri.parse('http://localhost:3000/api/trips/paginated?page=1&limit=4'),
+        Uri.parse('${Environment.apiHost}/api/trips/paginated?page=1&limit=4'),
       );
       
       print('_fetchTrips - Response status code: ${response.statusCode}'); // Debug log
@@ -280,7 +280,7 @@ class _OffersPageState extends State<OffersPage> {
   Future<void> _fetchAllTrips() async {
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:3000/api/trips/paginated?page=1&limit=1000'), // Fetch all trips
+        Uri.parse('${Environment.apiHost}/api/trips/paginated?page=1&limit=1000'), // Fetch all trips
       );
       
       if (response.statusCode == 200) {
@@ -368,7 +368,7 @@ class _OffersPageState extends State<OffersPage> {
                     child: CircleAvatar(
                       radius: 25,
                       backgroundImage: User.profilePicture != null
-                          ? NetworkImage('http://localhost:3000${User.profilePicture}')
+                          ? NetworkImage('${Environment.apiHost}${User.profilePicture}')
                           : const AssetImage('assets/profile.jpg') as ImageProvider,
                     ),
                   ),
@@ -644,7 +644,7 @@ class _OffersPageState extends State<OffersPage> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
                   child: Image.network(
-                    imageUrl != null ? 'http://localhost:3000$imageUrl' : 'http://localhost:3000/assets/default_trip.jpg',
+                    imageUrl != null ? '${Environment.apiHost}$imageUrl' : '${Environment.apiHost}/assets/default_trip.jpg',
                     width: double.infinity,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:frontend/main_screen.dart';
 import 'package:frontend/models/user.dart';
+import 'package:frontend/services/api_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'dart:convert';
@@ -34,7 +35,7 @@ class _SharePageState extends State<SharePage> {
     try {
       // First create the post
       final postResponse = await http.post(
-        Uri.parse('http://localhost:3000/api/posts'),
+        Uri.parse('${Environment.apiHost}/api/posts'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'content': _descriptionController.text.trim(),
@@ -53,7 +54,7 @@ class _SharePageState extends State<SharePage> {
       if (widget.formData.isNotEmpty) {
         var request = http.MultipartRequest(
           'POST',
-          Uri.parse('http://localhost:3000/api/posts/$postId/images'),
+          Uri.parse('${Environment.apiHost}/api/posts/$postId/images'),
         );
 
         for (var imageData in widget.formData) {

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:frontend/models/user.dart';
 import 'package:frontend/screens/home/trip_details.dart';
+import 'package:frontend/services/api_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
@@ -40,18 +41,18 @@ class Voyage {
     // Construct the full image URL based on the path format
     String imageUrl;
     if (imagePath.isEmpty) {
-      imageUrl = 'http://localhost:3000/uploads/default_trip.jpg';
+      imageUrl = '${Environment.apiHost}/uploads/default_trip.jpg';
     } else if (imagePath.startsWith('/uploads/post_images/')) {
       // Format: /uploads/post_images/1748444539324-840482498.png
-      imageUrl = 'http://localhost:3000$imagePath';
+      imageUrl = '${Environment.apiHost}$imagePath';
     } else if (imagePath.startsWith('/trip-')) {
       // Format: /trip-1748732253867-796251182.png
       imageUrl =
-          'http://localhost:3000/uploads/trip_images$imagePath'; // Utilisation de /uploads
+          '${Environment.apiHost}/uploads/trip_images$imagePath'; // Utilisation de /uploads
     } else {
       // Other formats
       imageUrl =
-          'http://localhost:3000${imagePath.startsWith('/') ? '' : '/'}$imagePath';
+          '${Environment.apiHost}${imagePath.startsWith('/') ? '' : '/'}$imagePath';
     }
 
     print('Final image URL: $imageUrl'); // Debug log
@@ -96,7 +97,7 @@ class _MoroccoMapDesignState extends State<MoroccoMapDesign> {
 
     try {
       final response = await http
-          .get(Uri.parse('http://localhost:3000/api/voyages'))
+          .get(Uri.parse('${Environment.apiHost}/api/voyages'))
           .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
@@ -234,7 +235,7 @@ class _MoroccoMapDesignState extends State<MoroccoMapDesign> {
 
       try {
         await http.post(
-          Uri.parse('http://localhost:3000/api/map/update'),
+          Uri.parse('${Environment.apiHost}/api/map/update'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({
             'userId': int.parse(User.getUserId() ?? '0'),

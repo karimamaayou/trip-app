@@ -3,6 +3,7 @@ import 'package:frontend/main_screen.dart';
 import 'package:frontend/screens/follow_trip/suivie_screen.dart';
 import 'package:frontend/screens/home/trip_details.dart';
 import 'package:frontend/screens/home/trip_details_historique.dart';
+import 'package:frontend/services/api_service.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:frontend/models/user.dart';
@@ -45,7 +46,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _fetchTripDetails() async {
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:3000/api/trips/details/${widget.tripId}'),
+        Uri.parse('${Environment.apiHost}/api/trips/details/${widget.tripId}'),
       );
 
       if (response.statusCode == 200) {
@@ -73,7 +74,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _setupSocket() {
-    socket = IO.io('http://localhost:3000', <String, dynamic>{
+    socket = IO.io(Environment.apiHost, <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
     });
@@ -109,7 +110,7 @@ class _ChatScreenState extends State<ChatScreen> {
     
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:3000/api/trips/${widget.tripId}/messages'),
+        Uri.parse('${Environment.apiHost}/api/trips/${widget.tripId}/messages'),
       );
 
       if (_isDisposed) return;
@@ -194,7 +195,7 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [
             CircleAvatar(
               backgroundImage: imageUrl != null 
-                ? NetworkImage('http://localhost:3000$imageUrl')
+                ? NetworkImage('${Environment.apiHost}$imageUrl')
                 : const AssetImage('assets/default_trip.jpg') as ImageProvider,
               radius: 16,
             ),
@@ -253,7 +254,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         CircleAvatar(
                           radius: 16,
                           backgroundImage: sender['photo_profil'] != null
-                            ? NetworkImage('http://localhost:3000${sender['photo_profil']}')
+                            ? NetworkImage('${Environment.apiHost}${sender['photo_profil']}')
                             : const AssetImage('assets/images/default_avatar.png') as ImageProvider,
                         ),
                         const SizedBox(width: 8),
@@ -299,7 +300,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         CircleAvatar(
                           radius: 16,
                           backgroundImage: sender['photo_profil'] != null
-                            ? NetworkImage('http://localhost:3000${sender['photo_profil']}')
+                            ? NetworkImage('${Environment.apiHost}${sender['photo_profil']}')
                             : const AssetImage('assets/images/default_avatar.png') as ImageProvider,
                         ),
                       ],

@@ -67,17 +67,16 @@ class _MembersScreenState extends State<MembersScreen> with WidgetsBindingObserv
     setState(() { isLoading = true; });
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:3000/api/trips/${widget.tripId}/all-participants'),
+        Uri.parse('http://localhost:3000/api/trips/${widget.tripId}/participants'),
       );
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         setState(() {
-          members = data.map((m) => {
+          members = data.where((m) => m['statut'] == 'accepte').map((m) => {
             'id': m['id_voyageur'],
             'nom': m['nom'],
             'prenom': m['prenom'],
             'role': m['role'],
-            'statut': m['statut'],
             'photo_profil': m['photo_profil'],
           }).toList();
           filteredMembers = members;

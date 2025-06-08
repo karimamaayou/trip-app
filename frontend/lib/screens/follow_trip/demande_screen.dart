@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/services/api_service.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:frontend/screens/home/reject_request_screen.dart';
@@ -44,7 +45,7 @@ class _DemandeScreenState extends State<DemandeScreen> {
   Future<void> _fetchPendingRequests() async {
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:3000/api/trips/${widget.tripId}/requests'),
+        Uri.parse('${Environment.apiHost}/api/trips/${widget.tripId}/requests'),
       );
 
       if (response.statusCode == 200) {
@@ -81,7 +82,7 @@ class _DemandeScreenState extends State<DemandeScreen> {
   Future<void> _handleRequest(int participationId, String action) async {
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:3000/api/trips/requests/$participationId/$action'),
+        Uri.parse('${Environment.apiHost}/api/trips/requests/$participationId/$action'),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -195,7 +196,7 @@ class _DemandeScreenState extends State<DemandeScreen> {
                       leading: CircleAvatar(
                         radius: 24,
                               backgroundImage: NetworkImage(
-                                'http://localhost:3000${request['photo_profil']}',
+                                '${Environment.apiHost}${request['photo_profil']}',
                               ),
                         backgroundColor: Colors.transparent,
                       ),

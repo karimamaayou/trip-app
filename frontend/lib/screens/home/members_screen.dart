@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/services/api_service.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:frontend/models/user.dart';
@@ -59,7 +60,7 @@ class _MembersPageState extends State<MembersPage> {
     if (confirmed == true) {
       try {
         final response = await http.delete(
-          Uri.parse('http://localhost:3000/api/trips/participants/$participantId'),
+          Uri.parse('${Environment.apiHost}/api/trips/participants/$participantId'),
           headers: {'Content-Type': 'application/json'},
         );
 
@@ -117,7 +118,7 @@ class _MembersPageState extends State<MembersPage> {
               children: [
                 CircleAvatar(
                   radius: 24,
-                  backgroundImage: NetworkImage('http://localhost:3000${member['photo_profil']}'),
+                  backgroundImage: NetworkImage('${Environment.apiHost}${member['photo_profil']}'),
                 ),
                 const SizedBox(width: 12),
                 Expanded(

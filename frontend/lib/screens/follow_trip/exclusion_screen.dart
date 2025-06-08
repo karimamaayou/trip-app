@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/services/api_service.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:frontend/models/user.dart'; // Import User model for getUserId
@@ -31,7 +32,7 @@ class _ExclusionPageState extends State<ExclusionPage> {
       _isLoading = true;
     });
 
-    final url = 'http://localhost:3000/api/trips/${widget.tripId}/remove-member/${widget.memberId}';
+    final url = '${Environment.apiHost}/api/trips/${widget.tripId}/remove-member/${widget.memberId}';
 
     try {
       final response = await http.delete(

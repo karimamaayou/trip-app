@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/screens/follow_trip/members_screen.dart';
+import 'package:frontend/services/api_service.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:frontend/models/user.dart';
@@ -52,7 +53,7 @@ class _FriendsListScreenState extends State<FriendsListScreen> {
 
       // Fetch friends
       final friendsResponse = await http.get(
-        Uri.parse('http://localhost:3000/api/friends/list/${User.getUserId()}'),
+        Uri.parse('${Environment.apiHost}/api/friends/list/${User.getUserId()}'),
       );
 
       if (friendsResponse.statusCode == 200) {
@@ -63,7 +64,7 @@ class _FriendsListScreenState extends State<FriendsListScreen> {
           if (friend['id_utilisateur'] == null) continue; // Skip if no user ID
           
           final statusResponse = await http.get(
-            Uri.parse('http://localhost:3000/api/trips/${widget.tripId}/participation-status/${friend['id_utilisateur']}'),
+            Uri.parse('${Environment.apiHost}/api/trips/${widget.tripId}/participation-status/${friend['id_utilisateur']}'),
           );
           
           if (statusResponse.statusCode == 200) {
@@ -129,7 +130,7 @@ class _FriendsListScreenState extends State<FriendsListScreen> {
   Future<void> _handleInvite(int friendId) async {
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:3000/api/trips/${widget.tripId}/invite'),
+        Uri.parse('${Environment.apiHost}/api/trips/${widget.tripId}/invite'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'userId': friendId}),
       );
@@ -259,7 +260,7 @@ class _FriendsListScreenState extends State<FriendsListScreen> {
                             leading: CircleAvatar(
                               radius: 24,
                               backgroundImage: friend['photo_profil'] != null && friend['photo_profil'].toString().isNotEmpty
-                                ? NetworkImage('http://localhost:3000${friend['photo_profil']}')
+                                ? NetworkImage('${Environment.apiHost}${friend['photo_profil']}')
                                 : const AssetImage('assets/images/default_avatar.png') as ImageProvider,
                               backgroundColor: Colors.transparent,
                             ),

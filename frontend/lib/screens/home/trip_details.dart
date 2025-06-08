@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/services/api_service.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:frontend/screens/home/info_conf_screen.dart';
@@ -32,20 +33,47 @@ class _TripDetailsPageState extends State<TripDetailsPage> {
   Future<void> _fetchTripDetails() async {
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:3000/api/trips/details/${widget.tripId}'),
+        Uri.parse('${Environment.apiHost}/api/trips/details/${widget.tripId}'),
       );
 
       if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print('Trip details response: $data'); // Debug print
+        
         setState(() {
-          tripData = json.decode(response.body);
+          tripData = data;
           // Check if current user is in participants list
           final participants = tripData!['participants'] as List;
           final currentUserId = int.parse(User.getUserId() ?? '0');
+          print('Current user ID: $currentUserId'); // Debug print
+          print('Participants: $participants'); // Debug print
+          
+          // Find user's participation
           final userParticipation = participants.firstWhere(
             (p) => p['id_voyageur'] == currentUserId,
             orElse: () => null,
           );
-          userParticipationStatus = userParticipation?['statut'];
+          
+          // Update participation status
+          if (userParticipation != null) {
+            userParticipationStatus = userParticipation['statut'];
+            print('User participation status: $userParticipationStatus'); // Debug print
+          } else {
+            // If user is not in participants list, check if they have a pending request
+            final pendingResponse = http.get(
+              Uri.parse('${Environment.apiHost}/api/trips/${widget.tripId}/participation-status/$currentUserId'),
+            ).then((response) {
+              if (response.statusCode == 200) {
+                final statusData = json.decode(response.body);
+                if (statusData['status'] == 'en_attente') {
+                  setState(() {
+                    userParticipationStatus = 'en_attente';
+                  });
+                }
+              }
+            });
+          }
+          
           isLoading = false;
         });
       }
@@ -64,7 +92,7 @@ class _TripDetailsPageState extends State<TripDetailsPage> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:3000/api/trips/${widget.tripId}/join'),
+        Uri.parse('${Environment.apiHost}/api/trips/${widget.tripId}/join'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'userId': int.parse(User.getUserId() ?? '0'),
@@ -72,6 +100,11 @@ class _TripDetailsPageState extends State<TripDetailsPage> {
       );
 
       if (response.statusCode == 200) {
+        // Set the status to en_attente immediately
+        setState(() {
+          userParticipationStatus = 'en_attente';
+        });
+        
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -206,7 +239,7 @@ class _TripDetailsPageState extends State<TripDetailsPage> {
                               bottomRight: Radius.circular(15),
                             ),
                             child: Image.network(
-                              'http://localhost:3000${images[index]['chemin']}',
+                              '${Environment.apiHost}${images[index]['chemin']}',
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) {
                                 return Container(
@@ -343,7 +376,7 @@ class _TripDetailsPageState extends State<TripDetailsPage> {
                       return _memberCard(
                         '${member['prenom']} ${member['nom']}',
                         member['role'],
-                        'http://localhost:3000${member['photo_profil']}',
+                        '${Environment.apiHost}${member['photo_profil']}',
                       );
                     }).toList(),
                   ),

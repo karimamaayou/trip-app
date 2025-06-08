@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/services/api_service.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -39,7 +40,7 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
   Future<void> _fetchCities() async {
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:3000/api/data/villes'),
+        Uri.parse('${Environment.apiHost}/api/data/villes'),
       );
 
       if (response.statusCode == 200) {
@@ -65,7 +66,7 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
   Future<void> _fetchActivities() async {
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:3000/api/data/activities'),
+        Uri.parse('${Environment.apiHost}/api/data/activities'),
       );
 
       if (response.statusCode == 200) {

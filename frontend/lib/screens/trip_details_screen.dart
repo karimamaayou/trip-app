@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/services/api_service.dart';
 import 'package:frontend/widgets/image_carousel.dart';
 import 'package:frontend/screens/home/info_conf_screen.dart';
 import 'package:frontend/screens/home/members_screen.dart';
@@ -30,7 +31,7 @@ class _TripDetailsPageState extends State<TripDetailsPage> {
   Future<void> _fetchTripDetails() async {
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:3000/api/trips/${widget.tripId}'),
+        Uri.parse('${Environment.apiHost}/api/trips/${widget.tripId}'),
       );
 
       if (response.statusCode == 200) {
@@ -39,14 +40,14 @@ class _TripDetailsPageState extends State<TripDetailsPage> {
           tripData = {
             ...data,
             'images': (data['images'] as List<dynamic>).map((img) => 
-              'http://localhost:3000${img['chemin']?.toString() ?? ''}'
+              '${Environment.apiHost}${img['chemin']?.toString() ?? ''}'
             ).toList(),
             'members': (data['participants'] as List<dynamic>).map((member) => {
               'name': '${member['prenom']} ${member['nom']}',
               'role': member['role'],
               'image': member['photo_profil'] != null 
-                ? 'http://localhost:3000${member['photo_profil'].toString()}'
-                : 'http://localhost:3000/assets/profile.jpg'
+                ? '${Environment.apiHost}${member['photo_profil'].toString()}'
+                : '${Environment.apiHost}/assets/profile.jpg'
             }).toList(),
           };
           isLoading = false;
