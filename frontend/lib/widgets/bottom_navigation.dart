@@ -16,55 +16,55 @@ class BottomNavigation extends StatelessWidget {
     return BottomNavigationBar(
       currentIndex: selectedIndex,
       onTap: onItemTapped,
-      selectedItemColor: const Color.fromARGB(255, 0, 165, 0), // Active icon color
+      selectedItemColor: const Color(0xFF24A500), // Active icon color
       unselectedItemColor: const Color(0xFF565656), // Inactive icon color
       backgroundColor: Colors.white,
       type: BottomNavigationBarType.fixed, // To keep all labels visible
-      items:  [
+      items: [
         BottomNavigationBarItem(
-          icon: _buildSvgIcon("/icons/discover.svg", 0),
+          icon: _buildSvgIcon("assets/icons/discover.svg", 0),
           label: "Explorer",
         ),
         BottomNavigationBarItem(
-          icon: _buildSvgIcon("/icons/posts.svg", 1),
+          icon: _buildSvgIcon("assets/icons/posts.svg", 1),
           label: "Posts",
         ),
         BottomNavigationBarItem(
-          icon: _buildSvgIcon("/icons/map.svg", 2),
+          icon: _buildSvgIcon("assets/icons/map.svg", 2),
           label: "Map",
         ),
         BottomNavigationBarItem(
-          icon: _buildSvgIcon("/icons/voyage.svg", 3),
+          icon: _buildSvgIcon("assets/icons/voyage.svg", 3),
           label: "Voyages",
         ),
       ],
     );
   }
-Widget _buildSvgIcon(String assetName, int index) {
-  return Column(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      // Le petit indicateur au-dessus de l'icône
-      Container(
-        height: 4,
-        width: 30,
-        decoration: BoxDecoration(
-          color: selectedIndex == index ? const Color(0xFF24A500) : Colors.transparent,
-          borderRadius: BorderRadius.circular(2),
-        ),
-      ),
-      const SizedBox(height: 4), // espace entre indicateur et icône
-      SvgPicture.asset(
-        assetName,
-        width: 24,
-        height: 24,
-        colorFilter: ColorFilter.mode(
-          selectedIndex == index ? const Color(0xFF24A500) : const Color(0xFFD4D6DD),
-          BlendMode.srcIn,
-        ),
-      ),
-    ],
-  );
-}
 
+  Widget _buildSvgIcon(String assetName, int index) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Le petit indicateur au-dessus de l'icône
+        Container(
+          height: 4,
+          width: 30,
+          decoration: BoxDecoration(
+            color: selectedIndex == index ? const Color(0xFF24A500) : Colors.transparent,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(height: 4), // espace entre indicateur et icône
+        SvgPicture.asset(
+          assetName,
+          width: 24,
+          height: 24,
+          colorFilter: ColorFilter.mode(
+            selectedIndex == index ? const Color(0xFF24A500) : const Color(0xFFD4D6DD),
+            BlendMode.srcIn,
+          ),
+        ),
+      ],
+    );
+  }
 }

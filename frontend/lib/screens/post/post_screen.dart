@@ -1,12 +1,7 @@
-import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:frontend/screens/post/ImagePost_screen.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'dart:html' as html;
 import 'package:frontend/models/user.dart';
 import 'package:frontend/services/api_service.dart';
 import 'package:frontend/screens/notification/notification_screen.dart';
@@ -462,55 +457,6 @@ class ImageDetailPage extends StatelessWidget {
 
   const ImageDetailPage({super.key, required this.imagePath});
 
-  Future<void> _saveImage(BuildContext context) async {
-    try {
-      if (kIsWeb) {
-        // Pour le web
-        final response = await http.get(Uri.parse(imagePath));
-        final blob = html.Blob([response.bodyBytes]);
-        final url = html.Url.createObjectUrlFromBlob(blob);
-        final anchor =
-            html.AnchorElement(href: url)
-              ..setAttribute("download", "image.jpg")
-              ..click();
-        html.Url.revokeObjectUrl(url);
-
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("✅ Image téléchargée !")));
-      } else {
-        // Pour mobile
-        final status = await Permission.storage.request();
-        if (status.isGranted) {
-          final response = await http.get(Uri.parse(imagePath));
-          final result = await ImageGallerySaver.saveImage(
-            response.bodyBytes,
-            quality: 100,
-            name: "image_${DateTime.now().millisecondsSinceEpoch}",
-          );
-
-          if (result['isSuccess']) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("✅ Image sauvegardée dans la galerie !"),
-              ),
-            );
-          } else {
-            throw Exception('Échec de la sauvegarde');
-          }
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("❌ Permission refusée.")),
-          );
-        }
-      }
-    } catch (e) {
-      print('Erreur lors de la sauvegarde: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("❌ Erreur: ${e.toString()}")));
-    }
-  }
 
   @override
   Widget build(BuildContext context) {

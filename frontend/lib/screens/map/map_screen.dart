@@ -89,7 +89,15 @@ class _MoroccoMapDesignState extends State<MoroccoMapDesign> {
     _fetchVoyages();
   }
 
+  @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
+  }
+
   Future<void> _fetchVoyages() async {
+    if (!mounted) return;
+    
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -99,6 +107,8 @@ class _MoroccoMapDesignState extends State<MoroccoMapDesign> {
       final response = await http
           .get(Uri.parse('${Environment.apiHost}/api/voyages'))
           .timeout(const Duration(seconds: 10));
+
+      if (!mounted) return;
 
       if (response.statusCode == 200) {
         final List<dynamic> responseData = jsonDecode(response.body);
@@ -116,6 +126,7 @@ class _MoroccoMapDesignState extends State<MoroccoMapDesign> {
         throw Exception('Failed to load voyages: ${response.statusCode}');
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _errorMessage = 'Erreur de chargement des voyages';
         _isLoading = false;
@@ -218,6 +229,8 @@ class _MoroccoMapDesignState extends State<MoroccoMapDesign> {
   }
 
   Future<void> _getCurrentLocation() async {
+    if (!mounted) return;
+
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) return;
@@ -246,6 +259,8 @@ class _MoroccoMapDesignState extends State<MoroccoMapDesign> {
       } catch (e) {
         print('Erreur lors de l\'envoi de la position: $e');
       }
+
+      if (!mounted) return;
 
       setState(() {
         _markers.add(

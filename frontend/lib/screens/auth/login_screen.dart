@@ -18,56 +18,81 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   bool _obscureText = true;
+  bool _isLoading = false;
 
+  Future<void> _loginUser() async {
+    if (_isLoading) return;
+    
+    final String email = emailController.text.trim();
+    final String motDePasse = passwordController.text.trim();
 
-
-
-
-Future<void> _loginUser() async {
-  final String email = emailController.text.trim();
-  final String motDePasse = passwordController.text.trim();
-
-  if (email.isEmpty || motDePasse.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Veuillez remplir tous les champs')),
-    );
-    return;
-  }
-   
-  try {
-    final response = await http.post(
-      Uri.parse('${Environment.apiHost}/api/auth/login'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'email': email,
-        'mot_de_passe': motDePasse,
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      final responseData = jsonDecode(response.body);
-      print('Login response: $responseData'); // Debug print
-      
-      // Store the user data
-      User.setUserData(responseData['user']);
-      
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const MainScreen()),
-      );
-    } else {
-      final responseData = jsonDecode(response.body);
+    if (email.isEmpty || motDePasse.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(responseData['message'] ?? 'Erreur de connexion')),
+        const SnackBar(content: Text('Veuillez remplir tous les champs')),
       );
+      return;
     }
-  } catch (e) {
-    print('Login error: $e'); // Debug print
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Erreur: $e')),
-    );
+
+    setState(() {
+      _isLoading = true;
+    });
+     
+    try {
+      final response = await http.post(
+        Uri.parse('${Environment.apiHost}/api/auth/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email,
+          'mot_de_passe': motDePasse,
+        }),
+      );
+
+      print('Login response status: ${response.statusCode}');
+      print('Login response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        
+        if (responseData == null || responseData['user'] == null) {
+          throw Exception('Données utilisateur manquantes');
+        }
+
+        final userData = Map<String, dynamic>.from(responseData['user']);
+        await User.setUserData(userData);
+
+        if (!mounted) return;
+
+        // Utiliser Future.microtask pour s'assurer que la navigation se fait après la mise à jour de l'état
+        Future.microtask(() {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const MainScreen()),
+            (route) => false,
+          );
+        });
+      } else {
+        final responseData = jsonDecode(response.body);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(responseData['message'] ?? 'Erreur de connexion')),
+          );
+        }
+      }
+    } catch (e) {
+      print('Login error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -174,9 +199,7 @@ Future<void> _loginUser() async {
                       ),
                     ),
                     onPressed: () async {
-                    await _loginUser();
-                     
-                      
+                      await _loginUser();
                     },
                     child: const Text(
                       'Sign In',

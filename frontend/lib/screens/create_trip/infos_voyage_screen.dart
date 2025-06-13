@@ -24,20 +24,38 @@ class _InfosVoyagePageState extends State<InfosVoyagePage> {
   String? dateFinError;
 
   Future<void> _selectDate(BuildContext context, bool isStartDate) async {
+    final DateTime now = DateTime.now();
+    final DateTime firstDate = DateTime(now.year, now.month, now.day);
+    
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime(2025, 6, 25),
-      firstDate: DateTime(2024),
+      initialDate: isStartDate ? firstDate : (_dateDepart ?? firstDate),
+      firstDate: firstDate,
       lastDate: DateTime(2030),
     );
+    
     if (picked != null) {
       setState(() {
         if (isStartDate) {
           _dateDepart = picked;
-          dateDepartError = null;  // Clear error on valid date selection
+          // Si la date de fin est antérieure à la nouvelle date de départ, la réinitialiser
+          if (_dateFin != null && _dateFin!.isBefore(_dateDepart!)) {
+            _dateFin = null;
+          }
+          dateDepartError = null;
         } else {
+          // Vérifier que la date de fin n'est pas antérieure à la date de départ
+          if (_dateDepart != null && picked.isBefore(_dateDepart!)) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('La date de fin doit être postérieure à la date de départ'),
+                backgroundColor: Colors.red,
+              ),
+            );
+            return;
+          }
           _dateFin = picked;
-          dateFinError = null;  // Clear error on valid date selection
+          dateFinError = null;
         }
       });
     }
@@ -86,128 +104,140 @@ class _InfosVoyagePageState extends State<InfosVoyagePage> {
         backgroundColor: Colors.white,
         elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            SizedBox(height: 30),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Titre',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: 30),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Titre',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      TextFormField(
+                        controller: titleController,
+                        decoration: InputDecoration(
+                          hintText: 'Titre du voyage',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      if (titleError != null)
+                        Text(
+                          titleError!,
+                          style: TextStyle(color: Colors.red, fontSize: 12),
+                        ),
+                      SizedBox(height: 24),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Description',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      TextFormField(
+                        controller: descriptionController,
+                        maxLines: 4,
+                        decoration: InputDecoration(
+                          hintText: 'Description',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      if (descriptionError != null)
+                        Text(
+                          descriptionError!,
+                          style: TextStyle(color: Colors.red, fontSize: 12),
+                        ),
+                      SizedBox(height: 16),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Date de départ',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      TextFormField(
+                        readOnly: true,
+                        onTap: () => _selectDate(context, true),
+                        controller: TextEditingController(
+                          text: _dateDepart != null
+                              ? '${_dateDepart!.day} ${_moisFr(_dateDepart!.month)} ${_dateDepart!.year}'
+                              : '',
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'Date de départ',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      if (dateDepartError != null)
+                        Text(
+                          dateDepartError!,
+                          style: TextStyle(color: Colors.red, fontSize: 12),
+                        ),
+                      SizedBox(height: 16),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Date de fin',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      TextFormField(
+                        readOnly: true,
+                        onTap: () => _selectDate(context, false),
+                        controller: TextEditingController(
+                          text: _dateFin != null
+                              ? '${_dateFin!.day} ${_moisFr(_dateFin!.month)} ${_dateFin!.year}'
+                              : '',
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'Date de fin',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      if (dateFinError != null)
+                        Text(
+                          dateFinError!,
+                          style: TextStyle(color: Colors.red, fontSize: 12),
+                        ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-            SizedBox(height: 16),
-            TextFormField(
-              controller: titleController,
-              decoration: InputDecoration(
-                hintText: 'Titre du voyage',
-                border: OutlineInputBorder(),
+              SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 16.0),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF24A500),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      onPressed: validateFields,
+                      child: const Text(
+                        'Suivant',
+                        style: TextStyle(fontSize: 18, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            ),
-            if (titleError != null)
-              Text(
-                titleError!,
-                style: TextStyle(color: Colors.red, fontSize: 12),
-              ),
-            SizedBox(height: 24),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Description',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-              ),
-            ),
-            SizedBox(height: 16),
-            TextFormField(
-              controller: descriptionController,
-              maxLines: 4,
-              decoration: InputDecoration(
-                hintText: 'Description',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            if (descriptionError != null)
-              Text(
-                descriptionError!,
-                style: TextStyle(color: Colors.red, fontSize: 12),
-              ),
-            SizedBox(height: 16),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Date de départ',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-              ),
-            ),
-            SizedBox(height: 16),
-            TextFormField(
-              readOnly: true,
-              onTap: () => _selectDate(context, true),
-              controller: TextEditingController(
-                text: _dateDepart != null
-                    ? '${_dateDepart!.day} ${_moisFr(_dateDepart!.month)} ${_dateDepart!.year}'
-                    : '',
-              ),
-              decoration: InputDecoration(
-                hintText: 'Date de départ',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            if (dateDepartError != null)
-              Text(
-                dateDepartError!,
-                style: TextStyle(color: Colors.red, fontSize: 12),
-              ),
-            SizedBox(height: 16),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Date de fin',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-              ),
-            ),
-            SizedBox(height: 16),
-            TextFormField(
-              readOnly: true,
-              onTap: () => _selectDate(context, false),
-              controller: TextEditingController(
-                text: _dateFin != null
-                    ? '${_dateFin!.day} ${_moisFr(_dateFin!.month)} ${_dateFin!.year}'
-                    : '',
-              ),
-              decoration: InputDecoration(
-                hintText: 'Date de fin',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            if (dateFinError != null)
-              Text(
-                dateFinError!,
-                style: TextStyle(color: Colors.red, fontSize: 12),
-              ),
-            Expanded(child: Container()), // Remplir l'espace restant
-          ],
-        ),
-      ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SizedBox(
-          width: double.infinity,
-          height: 50,
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF24A500),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            onPressed: validateFields,
-            child: const Text(
-              'Suivant',
-              style: TextStyle(fontSize: 18, color: Colors.white),
-            ),
+            ],
           ),
         ),
       ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/services/api_service.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:frontend/screens/follow_trip/exclusion_screen.dart';
@@ -67,7 +68,7 @@ class _MembersScreenState extends State<MembersScreen> with WidgetsBindingObserv
     setState(() { isLoading = true; });
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:3000/api/trips/${widget.tripId}/participants'),
+        Uri.parse('${Environment.apiHost}/api/trips/${widget.tripId}/participants'),
       );
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
@@ -264,7 +265,7 @@ class _MembersScreenState extends State<MembersScreen> with WidgetsBindingObserv
         leading: CircleAvatar(
           radius: 24,
           backgroundImage: member['photo_profil'] != null && member['photo_profil'].toString().isNotEmpty
-              ? NetworkImage('http://localhost:3000${member['photo_profil']}')
+              ? NetworkImage('${Environment.apiHost}${member['photo_profil']}')
               : const AssetImage('assets/images/default_avatar.png') as ImageProvider,
           backgroundColor: Colors.transparent,
         ),

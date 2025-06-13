@@ -239,179 +239,186 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         return false;
       },
       child: Scaffold(
-      backgroundColor: const Color(0xFFF9F9F9),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                const SizedBox(height: 30),
-                Row(
+        backgroundColor: const Color(0xFFF9F9F9),
+        resizeToAvoidBottomInset: true,
+        body: SafeArea(
+          child: Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back,
-                          color: Color(0xFF0054A5)),
-                      onPressed: () {
-                          Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => CustomProfileScreen()),
-                        );
+                    const SizedBox(height: 30),
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back,
+                              color: Color(0xFF0054A5)),
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => CustomProfileScreen()),
+                            );
+                          },
+                        ),
+                        const Text(
+                          "Éditer le profil",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0054A5),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    Stack(
+                      children: [
+                        CircleAvatar(
+                          radius: 50,
+                          backgroundColor: Colors.grey[300],
+                          backgroundImage: _webImage != null
+                              ? MemoryImage(_webImage!)
+                              : _selectedImage != null
+                                  ? FileImage(_selectedImage!) as ImageProvider
+                                  : User.profilePicture != null
+                                      ? NetworkImage('${Environment.apiHost}${User.profilePicture}')
+                                      : const AssetImage("assets/default_user.png"),
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: GestureDetector(
+                            onTap: _pickImage,
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF0054A5),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.edit,
+                                  color: Colors.white, size: 20),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
+
+                    /// NOM
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text("Nom",
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: const Color.fromARGB(255, 84, 84, 84))),
+                    ),
+                    const SizedBox(height: 6),
+                    TextFormField(
+                      controller: nomController,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      onChanged: (value) => setState(() {}),
+                      decoration: _inputDecoration(),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return "Veuillez entrer votre nom";
+                        } else if (!RegExp(r"^[a-zA-ZÀ-ÿ\s'-]+$").hasMatch(value)) {
+                          return "Caractères invalides";
+                        }
+                        return null;
                       },
                     ),
-                    const Text(
-                      "Éditer le profil",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF0054A5),
-                      ),
+                    const SizedBox(height: 16),
+
+                    /// PRENOM
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text("Prénom",
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: const Color.fromARGB(255, 84, 84, 84))),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Stack(
-                  children: [
-                    CircleAvatar(
-                      radius: 50,
-                      backgroundColor: Colors.grey[300],
-                      backgroundImage: _webImage != null
-                          ? MemoryImage(_webImage!)
-                          : _selectedImage != null
-                              ? FileImage(_selectedImage!) as ImageProvider
-                                : User.profilePicture != null
-                                    ? NetworkImage('${Environment.apiHost}${User.profilePicture}')
-                              : const AssetImage("assets/default_user.png"),
+                    const SizedBox(height: 6),
+                    TextFormField(
+                      controller: prenomController,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      onChanged: (value) => setState(() {}),
+                      decoration: _inputDecoration(),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return "Veuillez entrer votre prénom";
+                        } else if (!RegExp(r"^[a-zA-ZÀ-ÿ\s'-]+$").hasMatch(value)) {
+                          return "Caractères invalides";
+                        }
+                        return null;
+                      },
                     ),
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: GestureDetector(
-                        onTap: _pickImage,
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF0054A5),
-                            shape: BoxShape.circle,
+                    const SizedBox(height: 16),
+
+                    /// EMAIL
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text("Email",
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: const Color.fromARGB(255, 84, 84, 84))),
+                    ),
+                    const SizedBox(height: 6),
+                    TextFormField(
+                      controller: emailController,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      onChanged: (value) => setState(() {}),
+                      decoration: _inputDecoration(),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return "Veuillez entrer un email";
+                        } else if (!RegExp(r'\S+@\S+\.\S+').hasMatch(value)) {
+                          return "Email invalide";
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 40),
+
+                    /// BOUTON
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: isLoading ? null : _submitForm,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color.fromARGB(255, 36, 165, 0),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(Icons.edit,
-                              color: Colors.white, size: 20),
                         ),
+                        child: isLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text(
+                                "Enregistrer",
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold),
+                              ),
                       ),
                     ),
+                    const SizedBox(height: 20),
                   ],
                 ),
-                const SizedBox(height: 32),
-
-                /// NOM
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text("Nom",
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: const Color.fromARGB(255, 84, 84, 84))),
-                ),
-                const SizedBox(height: 6),
-                TextFormField(
-                  controller: nomController,
-                  autovalidateMode: AutovalidateMode.onUserInteraction,
-                  onChanged: (value) => setState(() {}),
-                  decoration: _inputDecoration(),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return "Veuillez entrer votre nom";
-                    } else if (!RegExp(r"^[a-zA-ZÀ-ÿ\s'-]+$").hasMatch(value)) {
-                      return "Caractères invalides";
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                /// PRENOM
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text("Prénom",
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: const Color.fromARGB(255, 84, 84, 84))),
-                ),
-                const SizedBox(height: 6),
-                TextFormField(
-                  controller: prenomController,
-                  autovalidateMode: AutovalidateMode.onUserInteraction,
-                  onChanged: (value) => setState(() {}),
-                  decoration: _inputDecoration(),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return "Veuillez entrer votre prénom";
-                    } else if (!RegExp(r"^[a-zA-ZÀ-ÿ\s'-]+$").hasMatch(value)) {
-                      return "Caractères invalides";
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                /// EMAIL
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text("Email",
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: const Color.fromARGB(255, 84, 84, 84))),
-                ),
-                const SizedBox(height: 6),
-                TextFormField(
-                  controller: emailController,
-                  autovalidateMode: AutovalidateMode.onUserInteraction,
-                  onChanged: (value) => setState(() {}),
-                  decoration: _inputDecoration(),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return "Veuillez entrer un email";
-                    } else if (!RegExp(r'\S+@\S+\.\S+').hasMatch(value)) {
-                      return "Email invalide";
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 40),
-
-                /// BOUTON
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                      onPressed: isLoading ? null : _submitForm,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color.fromARGB(255, 36, 165, 0),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                      child: isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : const Text(
-                      "Enregistrer",
-                      style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-              ],
               ),
             ),
           ),

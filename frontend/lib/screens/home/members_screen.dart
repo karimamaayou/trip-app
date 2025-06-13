@@ -44,6 +44,7 @@ class _MembersPageState extends State<MembersPage> {
           title: const Text('Confirmer l\'exclusion'),
           content: Text('Êtes-vous sûr de vouloir exclure $participantName du voyage ?'),
           actions: <Widget>[
+        
             TextButton(
               child: const Text('Annuler'),
               onPressed: () => Navigator.of(context).pop(false),

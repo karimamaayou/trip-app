@@ -1,5 +1,5 @@
 class User {
-  static String? id;
+  static int? id;
   static String? nom;
   static String? prenom;
   static String? email;
@@ -7,35 +7,64 @@ class User {
   static String? role;
   static String? token;
 
-  static void setUserData(Map<String, dynamic> userData) {
-    print('Setting user data: $userData'); // Debug print
-    id = userData['id']?.toString();
-    nom = userData['nom'];
-    prenom = userData['prenom'];
-    email = userData['email'];
-    profilePicture = userData['profilePicture']; // Changed from photo_profil to profilePicture
-    role = userData['role'];
-    token = userData['token'];
+  static Future<void> setUserData(Map<String, dynamic> data) async {
+    try {
+      print('Setting user data: $data');
+      
+      // Vérifier que les données requises sont présentes
+      if (data['id'] == null) {
+        throw Exception('ID utilisateur manquant');
+      }
 
-    // Debug prints to verify data is set correctly
-    print('User data set:');
-    print('ID: $id');
-    print('Name: $nom');
-    print('First Name: $prenom');
-    print('Email: $email');
-    print('Profile Picture: $profilePicture');
-    print('Role: $role');
-    print('Token: $token');
+      // Stocker les données
+      id = data['id'];
+      nom = data['nom'];
+      prenom = data['prenom'];
+      email = data['email'];
+      profilePicture = data['profilePicture'];
+      role = data['role'];
+      token = data['token']; // Le token est optionnel
+
+      // Vérifier que les données ont été correctement stockées
+      print('User data set:');
+      print('ID: $id');
+      print('Name: $nom');
+      print('First Name: $prenom');
+      print('Email: $email');
+      print('Profile Picture: $profilePicture');
+      print('Role: $role');
+      print('Token: $token');
+
+      // Vérifier uniquement l'ID qui est requis
+      if (id == null) {
+        throw Exception('Erreur lors du stockage des données utilisateur');
+      }
+    } catch (e) {
+      print('Error setting user data: $e');
+      // En cas d'erreur, nettoyer les données
+      clearUserData();
+      rethrow;
+    }
+  }
+
+  static void clearUserData() {
+    id = null;
+    nom = null;
+    prenom = null;
+    email = null;
+    profilePicture = null;
+    role = null;
+    token = null;
   }
 
   static String? userId;
 
   static void setUserId(String id) {
-    User.id = id;
+    User.id = int.parse(id);
   }
 
   static String? getUserId() {
-    return id;
+    return id?.toString();
   }
 
   static bool isLoggedIn() {
